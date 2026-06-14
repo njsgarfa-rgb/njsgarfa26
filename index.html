@@ -428,32 +428,36 @@ function resolveConfirm(res) {
     confirmCallback = null;
 }
 
-// --- Cloud Storage Adapter (JSONBin.io) ---
-// --- UPDATED CLOUD STORAGE ADAPTER ---
+// --- Cloud Storage Adapter (JSONBin.io Linked Database) ---
 const CLOUD = {
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
-    // HARDCODED: This forces all devices to point to the same database
-    BIN_ID: "6a2ee233da38895dfebf8333", 
+    ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
+    BIN_ID: "6a2ee233da38895dfebf8333", // Fixed explicit Private Bin ID to sync all devices instantly
     data: {},
 
     async init() {
+        // Show loading screen during cloud connection
         const loader = document.createElement('div');
         loader.id = 'cloudLoader';
-        loader.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:white;z-index:99999;display:flex;justify-content:center;align-items:center;">Syncing Ledger...</div>';
+        loader.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:99999;display:flex;justify-content:center;align-items:center;flex-direction:column;"><h2 style="color:var(--primary); margin-bottom: 5px;">NJS MASTER CLOUD</h2><p style="color:var(--text-muted); font-weight: 600;">Syncing secure ledger...</p></div>';
         document.body.appendChild(loader);
 
+        // Directly fetch existing database record using standard parameters
         try {
-            // Always fetch the latest from the hardcoded Bin ID
             const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
-                headers: { "X-Master-Key": this.API_KEY }
+                headers: { 
+                    "X-Master-Key": this.API_KEY,
+                    "X-Access-Key": this.ACCESS_KEY
+                }
             });
+            if (!res.ok) throw new Error("Server responded with an error profile.");
             const json = await res.json();
             this.data = json.record || {};
         } catch(e) { 
             console.error(e);
-            alert("Failed to connect to Cloud Database."); 
+            sysAlert("Failed to connect to Shared Cloud Database. Check network or keys."); 
         }
-        if(document.getElementById('cloudLoader')) document.body.removeChild(loader);
+        document.body.removeChild(loader);
     },
 
     get(key) { return this.data[key] || null; },
@@ -464,17 +468,24 @@ const CLOUD = {
     },
 
     async sync() {
+        // Pushes updates asynchronously to JSONBin shared ecosystem
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json", "X-Master-Key": this.API_KEY },
+                headers: { 
+                    "Content-Type": "application/json", 
+                    "X-Master-Key": this.API_KEY,
+                    "X-Access-Key": this.ACCESS_KEY
+                },
                 body: JSON.stringify(this.data)
             });
-        } catch(e) { console.error("Sync failed", e); }
+        } catch(e) { 
+            console.error("Background sync failed", e); 
+        }
     }
 };
+
 // --- Data Models & State ---
-// Migrated from global scope to be initialized after Cloud connects
 let curSess, config, records, documents, currentUserObj;
 
 // Pure Code Equivalent of the Club Banner
@@ -523,7 +534,7 @@ function fmtDate(dStr) {
 
 // --- Initialization & Auth Flow ---
 window.onload = async () => {
-    // 1. Connect to Cloud First
+    // 1. Connect to Shared Cloud Ecosystem
     await CLOUD.init();
 
     // 2. Load Core Data from Cloud
@@ -533,7 +544,7 @@ window.onload = async () => {
     if (rawCfg) {
         config = JSON.parse(rawCfg);
     } else {
-        // Push default configuration to cloud if brand new
+        // Push initialization configurations to explicit bin structural fallback
         config = {
             club: 'Garfa Nobojyoti Sangha',
             cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
@@ -738,6 +749,7 @@ function genAI() {
     document.getElementById('tBeing').value = `Being the amount ${action} ${m} on account of ${c} vide ${doc} No. ${v} amounting to Rs. ${a}/-.`;
 }
 
+// Fixed post operations to immediately force standard synchronous updates
 function saveTxn() {
     const idx = parseInt(document.getElementById('editIdx').value);
     const data = {
@@ -941,6 +953,7 @@ function renderAdminUsers() {
     document.getElementById('userListBody').innerHTML = h;
 }
 
+// Admin form actions
 function openUserForm() {
     document.getElementById('userEditForm').classList.remove('hidden');
     document.getElementById('editUserIdx').value = "-1";
@@ -1078,7 +1091,7 @@ function importExcel(e) {
                 let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
                 if(parsedCat && !config.cats.includes(parsedCat)) {
                     config.cats.push(parsedCat);
-                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config); // Save silently to avoid multiple calls
+                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config);
                 }
 
                 const cleanAmt = (val) => {
