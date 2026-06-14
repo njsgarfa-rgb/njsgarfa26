@@ -429,51 +429,31 @@ function resolveConfirm(res) {
 }
 
 // --- Cloud Storage Adapter (JSONBin.io) ---
+// --- UPDATED CLOUD STORAGE ADAPTER ---
 const CLOUD = {
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
-    BIN_ID: localStorage.getItem('njs_cloud_bin') || null, // Stores the created Bin ID so it remembers where to pull data
+    // HARDCODED: This forces all devices to point to the same database
+    BIN_ID: "6a2ec847f5f4af5e29f0afdb", 
     data: {},
 
     async init() {
-        // Show loading screen during cloud connection
         const loader = document.createElement('div');
         loader.id = 'cloudLoader';
-        loader.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:99999;display:flex;justify-content:center;align-items:center;flex-direction:column;"><h2 style="color:var(--primary); margin-bottom: 5px;">NJS MASTER CLOUD</h2><p style="color:var(--text-muted); font-weight: 600;">Syncing secure ledger...</p></div>';
+        loader.innerHTML = '<div style="position:fixed;top:0;left:0;right:0;bottom:0;background:white;z-index:99999;display:flex;justify-content:center;align-items:center;">Syncing Ledger...</div>';
         document.body.appendChild(loader);
 
-        if (!this.BIN_ID) {
-            // First run: Create a new database bin
-            try {
-                const res = await fetch("https://api.jsonbin.io/v3/b", {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json", 
-                        "X-Master-Key": this.API_KEY, 
-                        "X-Bin-Name": "NJS_Ledger_Master" 
-                    },
-                    body: JSON.stringify({ "njs_active_sess": "2024-25" })
-                });
-                const json = await res.json();
-                this.BIN_ID = json.metadata.id;
-                localStorage.setItem('njs_cloud_bin', this.BIN_ID);
-                this.data = json.record;
-                console.log("Cloud Bin Initialized:", this.BIN_ID);
-            } catch(e) { 
-                sysAlert("Failed to initialize Cloud Database. Check network connection."); 
-            }
-        } else {
-            // Successive runs: Load existing data
-            try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
-                    headers: { "X-Master-Key": this.API_KEY }
-                });
-                const json = await res.json();
-                this.data = json.record || {};
-            } catch(e) { 
-                sysAlert("Failed to connect to Cloud Database."); 
-            }
+        try {
+            // Always fetch the latest from the hardcoded Bin ID
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
+                headers: { "X-Master-Key": this.API_KEY }
+            });
+            const json = await res.json();
+            this.data = json.record || {};
+        } catch(e) { 
+            console.error(e);
+            alert("Failed to connect to Cloud Database."); 
         }
-        document.body.removeChild(loader);
+        if(document.getElementById('cloudLoader')) document.body.removeChild(loader);
     },
 
     get(key) { return this.data[key] || null; },
@@ -484,19 +464,15 @@ const CLOUD = {
     },
 
     async sync() {
-        // Pushes the entire state to JSONBin asynchronously
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json", "X-Master-Key": this.API_KEY },
                 body: JSON.stringify(this.data)
             });
-        } catch(e) { 
-            console.error("Background sync failed", e); 
-        }
+        } catch(e) { console.error("Sync failed", e); }
     }
 };
-
 // --- Data Models & State ---
 // Migrated from global scope to be initialized after Cloud connects
 let curSess, config, records, documents, currentUserObj;
