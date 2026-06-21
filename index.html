@@ -12,6 +12,7 @@
     
     <style>
         :root {
+            /* Using deep reds to match the provided logo/banner */
             --primary: #881337; --accent: #be123c; --bg: #f8fafc; --card: #ffffff;
             --text-main: #1e293b; --text-muted: #64748b; --danger: #ef4444;
             --blue: #0284c7; --border: #e2e8f0; --warn: #f59e0b; --success: #10b981;
@@ -259,7 +260,7 @@
 
     <div id="adminSection" class="app-section hidden admin-only">
         <div class="card" style="padding-bottom: 0;">
-            <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
+	    <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
             <div class="admin-tabs">
                 <div class="admin-tab active" onclick="switchAdminTab('admGeneral', this)">General Settings</div>
                 <div class="admin-tab" onclick="switchAdminTab('admUsers', this)">Password & Members</div>
@@ -344,7 +345,7 @@
                 <div><label>Assign to Session</label><select id="upDocSess"></select></div>
                 <div><label>Event / Document Name</label><input id="upDocName" placeholder="e.g. Durga Puja Audit Report"></div>
             </div>
-            <label>Select PDF File</label>
+            <label>Select PDF File (Max 500KB)</label>
             <input type="file" id="upDocFile" accept="application/pdf" style="padding: 10px; background: white;">
             <button onclick="uploadDoc()" class="btn btn-success" style="margin-top: 15px; width: 100%; padding: 12px;">UPLOAD & BIND DOCUMENT</button>
 
@@ -458,7 +459,7 @@ const CLOUD = {
         return this.data[key] || null;
     },
 
-    set(key, val) {
+    set(key,val) {
         this.data[key] = val;
         this.sync();
     },
@@ -466,13 +467,13 @@ const CLOUD = {
     async sync() {
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Master-Key": this.API_KEY,
-                    "X-Access-Key": this.ACCESS_KEY
+                method:"PUT",
+                headers:{
+                    "Content-Type":"application/json",
+                    "X-Master-Key":this.API_KEY,
+                    "X-Access-Key":this.ACCESS_KEY
                 },
-                body: JSON.stringify(this.data)
+                body:JSON.stringify(this.data)
             });
         } catch(e) {
             console.error(e);
@@ -483,6 +484,7 @@ const CLOUD = {
 // --- Data Models & State ---
 let curSess, config, records, documents, currentUserObj;
 
+// Pure Code Equivalent of the Club Banner
 const staticBannerHTML = `
 <div style="display: flex; align-items: stretch; max-width: 800px; margin: 0 auto 20px auto; color: #a31621; font-family: Arial, sans-serif; background: white; overflow: hidden; padding: 10px;">
     <div style="width: 80px; display: flex; align-items: center; justify-content: center;">
@@ -650,18 +652,19 @@ function finalizeLogin() {
     showAppSection('dashboard');
 }
 
+// --- Navigation & Core Views ---
 function showAppSection(id) {
     document.querySelectorAll('.app-section').forEach(d => d.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(d => d.classList.remove('active'));
 
     const navMap = {
-        dashboard: 'navJournal',
-        entrySection: 'navEntry',
-        ledgerSection: 'navLedger',
-        trialSection: 'navReports',
-        docSection: 'navDocs',
-        adminSection: 'navAdmin'
+        dashboard:'navJournal',
+        entrySection:'navEntry',
+        ledgerSection:'navLedger',
+        trialSection:'navReports',
+        docSection:'navDocs',
+        adminSection:'navAdmin'
     };
 
     if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
@@ -869,7 +872,6 @@ function switchAdminTab(id, el) {
     el.classList.add('active');
 }
 
-// --- Console Configuration Loader ---
 function loadAdmin() {
     document.getElementById('admClub').value = config.club;
     document.getElementById('admPassA').value = config.passA;
@@ -896,6 +898,7 @@ function saveAdminGeneral() {
     sysAlert("General Configuration Synced to Cloud Successfully!"); 
 }
 
+// --- Data Protection: Import/Export ---
 function backupData() {
     const data = { config, documents, db: {} };
     config.sessions.forEach(s => data.db[s] = JSON.parse(CLOUD.get('njs_db_'+s) || '[]'));
@@ -998,6 +1001,7 @@ function delUser(i) {
     });
 }
 
+// --- Dynamic Cross-Device Document Pipeline ---
 function uploadDoc() {
     const sess = document.getElementById('upDocSess').value;
     const name = document.getElementById('upDocName').value.trim();
@@ -1006,7 +1010,8 @@ function uploadDoc() {
     if(!name || !fileInp.files.length) return sysAlert("Please provide document name and select a PDF file.");
     
     const file = fileInp.files[0];
-    if(file.size > 2 * 1024 * 1024) return sysAlert("File is too large. Cloud limit is 2MB per file.");
+    // Rigid 500KB ceiling to prevent stream fragmentation on mobile devices
+    if(file.size > 500 * 1024) return sysAlert("File is too large. Maximum permitted size is 500KB.");
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1018,7 +1023,7 @@ function uploadDoc() {
             fileInp.value = "";
             renderAdminDocs();
         } catch(err) {
-            sysAlert("Storage Limit Reached. Cannot save large file.", "Error");
+            sysAlert("Storage Limit Reached. Cannot save file.", "Error");
         }
     };
     reader.readAsDataURL(file);
@@ -1049,17 +1054,65 @@ function renderDocGallery() {
     if(viewDocs.length === 0) {
         h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available for the selected criteria.</div>`;
     } else {
-        viewDocs.forEach(d => {
+        viewDocs.forEach((d) => {
             h += `<div class="doc-card">
                 <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
                 <div style="font-weight: 600;">${d.name}</div>
-                <a href="${d.dataUrl}" download="${d.name.replace(/\s+/g,'_')}.pdf" target="_blank" class="btn btn-ghost" style="text-decoration:none; margin-top: auto;">👁 View / Download</a>
+                <button onclick="viewPDFInline(${d.id})" class="btn btn-ghost" style="margin-top: auto; justify-content: center;">👁 View Document</button>
             </div>`;
         });
     }
     document.getElementById('docGallery').innerHTML = h;
 }
 
+function viewPDFInline(docId) {
+    const doc = documents.find(d => d.id === docId);
+    if (!doc || !doc.dataUrl) return sysAlert("Document data could not be found.");
+
+    try {
+        // Safe conversion of Base64 to binary byte stream array
+        const parts = doc.dataUrl.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(new ArrayBuffer(rawLength));
+
+        for (let i = 0; i < rawLength; ++i) {
+            uInt8Array[i] = raw.charCodeAt(i);
+        }
+
+        const blob = new Blob([uInt8Array], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+
+        // Launches an unblocked viewport wrapper target container
+        const viewerWin = window.open("", "_blank");
+        if (viewerWin) {
+            viewerWin.document.write(`
+                <html>
+                <head>
+                    <title>${doc.name}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #525659; }
+                        iframe { width: 100%; height: 100%; border: none; }
+                    </style>
+                </head>
+                <body>
+                    <iframe src="${blobUrl}"></iframe>
+                </body>
+                </html>
+            `);
+            viewerWin.document.close();
+        } else {
+            sysAlert("Pop-up blocked! Please allow pop-ups to view this document inline.");
+        }
+    } catch (err) {
+        console.error(err);
+        sysAlert("Could not render the PDF window on this device.");
+    }
+}
+
+// --- Excel Integrations ---
 function importExcel(e) {
     const file = e.target.files[0];
     if(!file) return;
@@ -1120,8 +1173,7 @@ function importExcel(e) {
 function exportTable(id, name) {
     const table = document.getElementById(id);
     const ws = XLSX.utils.table_to_sheet(table);
-    const wb = XLSX.utils.book_new(); 
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     XLSX.writeFile(wb, `${name}_${curSess}.xlsx`);
 }
 </script>
