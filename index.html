@@ -153,6 +153,20 @@
 </header>
 
 <div class="container hidden" id="appContainer">
+	<div id="docsSection" class="app-section hidden">
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;color:var(--primary)">📂 Shared Documents</h3>
+
+            <button class="btn btn-success admin-only"
+                    onclick="addDocument()">
+                + Add Document
+            </button>
+        </div>
+
+        <div id="docsList" style="margin-top:20px"></div>
+    </div>
+</div>
     <div id="dashboard" class="app-section">
         <div class="control-bar no-print">
             <div class="tool-group">
@@ -347,6 +361,12 @@
 </div>
 
 <nav class="bottom-nav hidden" id="mobileNav">
+	<div class="nav-item"
+     onclick="showAppSection('docsSection');renderDocs()"
+     id="navDocs">
+    <span class="nav-icon">📂</span>
+    Docs
+</div>
     <div class="nav-item" onclick="showAppSection('dashboard');" id="navJournal">
         <span class="nav-icon">📑</span> Journal
     </div>
@@ -459,7 +479,7 @@ window.onload = async () => {
     await CLOUD.init();
     curSess = CLOUD.get('njs_active_sess') || '2024-25';
     let rawCfg = CLOUD.get('njs_cfg_v16');
-    config = rawCfg ? JSON.parse(rawCfg) : { club: 'Garfa Nobojyoti Sangha', cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'], sessions: ['2023-24', '2024-25'], passA: 'admin123', sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary', users: [] };
+    config = rawCfg ? JSON.parse(rawCfg) : {if (!config.docs) config.docs = []; club: 'Garfa Nobojyoti Sangha', cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'], sessions: ['2023-24', '2024-25'], passA: 'admin123', sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary', users: [] };
     
     document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
     document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
@@ -572,6 +592,44 @@ function backupData() {
     config.sessions.forEach(s => data.db[s] = JSON.parse(CLOUD.get('njs_db_'+s) || '[]'));
     const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Backup.json'; a.click();
+}
+function addDocument() {
+
+    const title = prompt("Document title");
+    if (!title) return;
+
+    let link = prompt("Paste Google Drive link");
+    if (!link) return;
+
+    config.docs.push({
+        title,
+        link
+    });
+
+    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+
+    renderDocs();
+
+    sysAlert("Document saved successfully");
+}
+function addDocument() {
+
+    const title = prompt("Document title");
+    if (!title) return;
+
+    let link = prompt("Paste Google Drive link");
+    if (!link) return;
+
+    config.docs.push({
+        title,
+        link
+    });
+
+    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+
+    renderDocs();
+
+    sysAlert("Document saved successfully");
 }
 </script>
 </body>
