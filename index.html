@@ -177,6 +177,7 @@
                 <h3 style="margin:0; color: var(--primary);">Live Journal</h3>
                 <div style="display: flex; gap: 8px;">
                     <button onclick="exportTable('mainTable', 'Journal')" class="btn btn-ghost">📊 Export Excel</button>
+                    <button onclick="exportPDF('mainTable', 'Journal')" class="btn btn-ghost">📄 Export PDF</button>
                 </div>
             </div>
             <div class="table-container">
@@ -229,7 +230,10 @@
         <div class="card">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin:0; color: var(--primary);">Trial Balance</h3>
-                <button onclick="exportTable('tblTrial', 'Trial_Balance')" class="btn btn-ghost" style="padding: 4px 8px; font-size: 11px;">📊 Export Excel</button>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="exportTable('tblTrial', 'Trial_Balance')" class="btn btn-ghost" style="padding: 4px 8px; font-size: 11px;">📊 Export Excel</button>
+                    <button onclick="exportPDF('tblTrial', 'Trial_Balance')" class="btn btn-ghost" style="padding: 4px 8px; font-size: 11px;">📄 Export PDF</button>
+                </div>
             </div>
             <div id="trialOutput"></div>
         </div>
@@ -776,6 +780,90 @@ function saveTxn() {
     refresh(); showAppSection('dashboard');
 }
 
+// --- Excel & PDF Integrations ---
+function importExcel(e) {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+            const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            
+            data.forEach(x => {
+                let finalDate = new Date().toISOString().split('T')[0];
+                if (x.Date) {
+                    let d = String(x.Date).trim();
+                    if (d.includes('/')) {
+                        let p = d.split('/');
+                        if(p.length === 3) finalDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+                    } else if (d.includes('-')) {
+                        finalDate = d;
+                    } else if (!isNaN(d)) {
+                        let jsDate = new Date(Math.round((Number(d) - 25569) * 86400 * 1000));
+                        if(!isNaN(jsDate)) finalDate = jsDate.toISOString().split('T')[0];
+                    }
+                }
+
+                let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
+                if(parsedCat && !config.cats.includes(parsedCat)) {
+                    config.cats.push(parsedCat);
+                    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+                }
+
+                const cleanAmt = (val) => {
+                    if(!val) return 0;
+                    let num = parseFloat(String(val).replace(/[^0-9.-]+/g,""));
+                    return isNaN(num) ? 0 : num;
+                };
+
+                records.push({
+                    date: finalDate,
+                    vou: String(x.Voucher || x['Voucher#'] || ""),
+                    cat: parsedCat,
+                    mem: x.Particulars || x.Remark || "General",
+                    dr: cleanAmt(x['In (+)'] || x.In || x['Cash In (Dr)'] || 0),
+                    cr: cleanAmt(x['Out (-)'] || x.Out || x['Cash Out (Cr)'] || 0),
+                    being: x.Narration || x.Being || ""
+                });
+            });
+            refresh(); 
+            sysAlert("Batch Excel Import Synced to Cloud Successfully!");
+        } catch(err) {
+            console.error(err);
+            sysAlert("Error importing file. Please verify format.", "Import Failed");
+        }
+        e.target.value = ''; 
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function exportTable(id, name) {
+    const table = document.getElementById(id);
+    const ws = XLSX.utils.table_to_sheet(table);
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, `${name}_${curSess}.xlsx`);
+}
+
+function exportPDF(tableId, name) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont("Helvetica");
+    doc.text(`${config.club || 'NJS Club'} - ${name} (${curSess})`, 14, 15);
+    doc.autoTable({ 
+        html: '#' + tableId, 
+        startY: 22,
+        styles: { font: "Helvetica", fontSize: 9 },
+        headStyles: { fillColor: [136, 19, 55] },
+        didParseCell: function(data) {
+            if (data.cell.element && (data.cell.element.classList.contains('no-print') || data.cell.element.classList.contains('admin-only-cell'))) {
+                data.cell.text = '';
+            }
+        }
+    });
+    doc.save(`${name}_${curSess}.pdf`);
+}
+
 function editRec(i) {
     const r = records[i]; showAppSection('entrySection');
     document.getElementById('editIdx').value = i; document.getElementById('tDate').value = r.date;
@@ -969,6 +1057,7 @@ function renderAdminUsers() {
     document.getElementById('userListBody').innerHTML = h;
 }
 
+// --- Membership Access Management ---
 function openUserForm() {
     document.getElementById('userEditForm').classList.remove('hidden');
     document.getElementById('editUserIdx').value = "-1";
@@ -1079,71 +1168,6 @@ function openDocument(docId) {
     if (doc.link) {
         window.open(doc.link, "_blank");
     }
-}
-
-// --- Excel Integrations ---
-function importExcel(e) {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        try {
-            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
-            const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-            
-            data.forEach(x => {
-                let finalDate = new Date().toISOString().split('T')[0];
-                if (x.Date) {
-                    let d = String(x.Date).trim();
-                    if (d.includes('/')) {
-                        let p = d.split('/');
-                        if(p.length === 3) finalDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
-                    } else if (d.includes('-')) {
-                        finalDate = d;
-                    } else if (!isNaN(d)) {
-                        let jsDate = new Date(Math.round((Number(d) - 25569) * 86400 * 1000));
-                        if(!isNaN(jsDate)) finalDate = jsDate.toISOString().split('T')[0];
-                    }
-                }
-
-                let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
-                if(parsedCat && !config.cats.includes(parsedCat)) {
-                    config.cats.push(parsedCat);
-                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config);
-                }
-
-                const cleanAmt = (val) => {
-                    if(!val) return 0;
-                    let num = parseFloat(String(val).replace(/[^0-9.-]+/g,""));
-                    return isNaN(num) ? 0 : num;
-                };
-
-                records.push({
-                    date: finalDate,
-                    vou: String(x.Voucher || x['Voucher#'] || ""),
-                    cat: parsedCat,
-                    mem: x.Particulars || x.Remark || "General",
-                    dr: cleanAmt(x['In (+)'] || x.In || x['Cash In (Dr)'] || 0),
-                    cr: cleanAmt(x['Out (-)'] || x.Out || x['Cash Out (Cr)'] || 0),
-                    being: x.Narration || x.Being || ""
-                });
-            });
-            refresh(); 
-            sysAlert("Batch Excel Import Synced to Cloud Successfully!");
-        } catch(err) {
-            console.error(err);
-            sysAlert("Error importing file. Please verify format.", "Import Failed");
-        }
-        e.target.value = ''; 
-    };
-    reader.readAsArrayBuffer(file);
-}
-
-function exportTable(id, name) {
-    const table = document.getElementById(id);
-    const ws = XLSX.utils.table_to_sheet(table);
-    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, `${name}_${curSess}.xlsx`);
 }
 </script>
 </body>
