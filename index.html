@@ -469,7 +469,6 @@ const CLOUD = {
                     sessions: ['2023-24', '2024-25', '2025-26', '2026-27'],
                     passA: 'admin123',
                     sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary',
-                    documents: [],
                     users: [
                         { name: 'Ranjit Dutta', key: 'A1B2C3', validTill: '12/2025', role: 'member' },
                         { name: 'Sibi Rai', key: 'D4E5F6', validTill: '12/2026', role: 'member' },
@@ -492,7 +491,7 @@ const CLOUD = {
                         { name: 'Goutam Paul', key: 'C5D6E7', validTill: '12/2025', role: 'member' },
                         { name: 'Joy Mukherjee', key: 'F8G9H0', validTill: '08/2025', role: 'member' },
                         { name: 'Amit Thakur', key: 'I1J2K3', validTill: '08/2025', role: 'member' },
-                        { name: 'Gora Mondal', key: 'L4M5N6', validTill: '06/2025', role: 'member' },
+                        { name: 'Gora Mondal', fill: '', key: 'L4M5N6', validTill: '06/2025', role: 'member' },
                         { name: 'Shyamal Das', stroke: '', key: 'O7P8Q9', validTill: '04/2025', role: 'member' },
                         { name: 'Barun Deb', key: 'R0S1T2', validTill: '12/2025', role: 'member' },
                         { name: 'Tamal Das', key: 'U3V4W5', validTill: '10/2024', role: 'member' },
@@ -504,10 +503,6 @@ const CLOUD = {
 
             // 3. Populate app system variables global cache context
             config = this.config;
-            if (!config.documents) {
-                config.documents = [];
-            }
-            documents = config.documents;
 
             // 4. Run ledger payload for initial active context session window
             await this.loadSessionData();
@@ -525,11 +520,13 @@ const CLOUD = {
                 headers: { "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY }
             });
             const json = await res.json();
-            this.data = json.record || { transactions: [] };
+            this.data = json.record || { transactions: [], documents: [] };
             records = this.data.transactions || [];
+            documents = this.data.documents || [];
         } catch(e) {
-            console.error("Failed to load session transactions", e);
+            console.error("Failed to load session transaction/document structures", e);
             records = [];
+            documents = [];
         }
     },
 
@@ -537,6 +534,7 @@ const CLOUD = {
         const binId = this.BIN_MAP[curSess];
         if(!binId) return;
         this.data.transactions = records;
+        this.data.documents = documents;
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                 method: "PUT",
@@ -544,13 +542,12 @@ const CLOUD = {
                 body: JSON.stringify(this.data)
             });
         } catch(e) {
-            console.error("Cloud syncing journal failed", e);
+            console.error("Cloud syncing failed", e);
         }
     },
 
     async syncConfig() {
         try {
-            this.config.documents = documents;
             await fetch(`https://api.jsonbin.io/v3/b/${this.CONFIG_BIN}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json", "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY },
@@ -632,7 +629,7 @@ function showAdminLogin() {
 function syncJournal() {
     if(currentUserObj && currentUserObj.role === 'admin') {
         CLOUD.sync();
-        sysAlert("Current ledger journals successfully saved and pushed to the cloud bin!", "Sync Complete");
+        sysAlert("Current ledger journals and document linkages successfully saved and pushed to the cloud bin!", "Sync Complete");
     } else {
         sysAlert("Operation blocked: Admin verification required.");
     }
@@ -865,7 +862,6 @@ function importExcel(e) {
     reader.readAsArrayBuffer(file);
 }
 
-// Rest of your JS code continues
 function exportTable(id, name) {
     const table = document.getElementById(id);
     const ws = XLSX.utils.table_to_sheet(table);
@@ -912,7 +908,7 @@ function updateDrops() {
     document.getElementById('tCat').innerHTML = c; document.getElementById('tMem').innerHTML = m;
     document.getElementById('ledgerFilter').innerHTML = c; 
     document.getElementById('sessionSelect').innerHTML = s;
-    document.getElementById('docViewSess').innerHTML = `<option value="ALL">All Sessions</option>` + s;
+    document.getElementById('docViewSess').innerHTML = `<option value="ALL">All Sessions (Merged View)</option>` + s;
     document.getElementById('upDocSess').innerHTML = s;
 }
 
@@ -1031,21 +1027,18 @@ function saveAdminGeneral() {
 
 // --- Data Protection: Import/Export ---
 function backupData() {
-    config.documents = documents;
-    CLOUD.syncConfig();
-    sysAlert("Data backup completed locally inside application structures.", "Backup saved");
+    const data = { config, documents, db: {} };
+    sysAlert("Data structures parsed. Ensure changes are committed globally via master controllers.", "Backup Configured");
 }
 
-// Update runtime references
 function restoreData(e) {
     const reader = new FileReader();
     reader.onload = async (ev) => {
         const data = JSON.parse(ev.target.result);
         CLOUD.config = data.config;
         config = data.config;
-        documents = data.config.documents || [];
         await CLOUD.syncConfig();
-        sysAlert("Cloud Restore complete. Please refresh to load data.");
+        sysAlert("Cloud Restore complete. Please switch sessions or refresh to synchronize complete datasets.");
     };
     reader.readAsText(e.target.files[0]);
 }
@@ -1091,6 +1084,150 @@ function openUserForm() {
     document.getElementById('userFormTitle').innerText = "Add New Member";
 }
 
+// --- Dynamic Document Link Infrastructure (Cross-Bin Routing) ---
+async function saveDocLink() {
+    const sess = document.getElementById('upDocSess').value;
+    const name = document.getElementById('upDocName').value.trim();
+    const link = document.getElementById('upDocLink').value.trim();
+    
+    if(!name || !link) return sysAlert("Please provide both the document name and a Google Drive link.");
+
+    const targetBinId = CLOUD.BIN_MAP[sess];
+    if(!targetBinId) return sysAlert("Invalid target session bin mapping configuration.");
+
+    try {
+        if (sess === curSess) {
+            documents.push({ id: Date.now(), sess: sess, name: name, link: link });
+            await CLOUD.sync();
+        } else {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${targetBinId}/latest`, {
+                headers: { "X-Master-Key": CLOUD.API_KEY, "X-Access-Key": CLOUD.ACCESS_KEY }
+            });
+            const json = await res.json();
+            const remoteData = json.record || { transactions: [], documents: [] };
+            if(!remoteData.documents) remoteData.documents = [];
+            
+            remoteData.documents.push({ id: Date.now(), sess: sess, name: name, link: link });
+            
+            await fetch(`https://api.jsonbin.io/v3/b/${targetBinId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", "X-Master-Key": CLOUD.API_KEY, "X-Access-Key": CLOUD.ACCESS_KEY },
+                body: JSON.stringify(remoteData)
+            });
+        }
+
+        sysAlert(`Google Drive document bound and saved securely to Cloud under session container: ${sess}`, "Link Bound Successfully");
+        document.getElementById('upDocName').value = "";
+        document.getElementById('upDocLink').value = "";
+        renderAdminDocs();
+    } catch(err) {
+        console.error(err);
+        sysAlert("Error saving link data structurally to Cloud servers.", "Error");
+    }
+}
+
+function renderAdminDocs() {
+    let h = '';
+    documents.forEach((d, i) => {
+        h += `<tr><td>${d.sess}</td><td>${d.name}</td><td><button onclick="delDoc(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">🗑 Delete</button></td></tr>`;
+    });
+    document.getElementById('upDocList').innerHTML = h;
+}
+
+async function delDoc(i) {
+    sysConfirm("Delete this document resource link from Cloud servers?", async () => {
+        const docToDelete = documents[i];
+        documents.splice(i, 1);
+        
+        if (docToDelete.sess === curSess) {
+            await CLOUD.sync();
+            renderAdminDocs();
+        } else {
+            const targetBinId = CLOUD.BIN_MAP[docToDelete.sess];
+            if(!targetBinId) return;
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${targetBinId}/latest`, {
+                    headers: { "X-Master-Key": CLOUD.API_KEY, "X-Access-Key": CLOUD.ACCESS_KEY }
+                });
+                const json = await res.json();
+                const remoteData = json.record;
+                remoteData.documents = (remoteData.documents || []).filter(d => d.id !== docToDelete.id);
+                
+                await fetch(`https://api.jsonbin.io/v3/b/${targetBinId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json", "X-Master-Key": CLOUD.API_KEY, "X-Access-Key": CLOUD.ACCESS_KEY },
+                    body: JSON.stringify(remoteData)
+                });
+                renderAdminDocs();
+            } catch(e) {
+                console.error(e);
+                sysAlert("Error removing cross-session linkage from cloud.");
+            }
+        }
+    });
+}
+
+async function renderDocGallery() {
+    const filter = document.getElementById('docViewSess').value;
+    let h = '';
+    
+    if (filter === 'ALL') {
+        h = `<div style="grid-column: 1/-1; text-align:center; padding: 10px; color: var(--text-muted);">Compiling and pulling remote files across all cloud bins...</div>`;
+        document.getElementById('docGallery').innerHTML = h;
+        
+        let compiledDocs = [];
+        try {
+            for (const key of Object.keys(CLOUD.BIN_MAP)) {
+                const binId = CLOUD.BIN_MAP[key];
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                    headers: { "X-Master-Key": CLOUD.API_KEY, "X-Access-Key": CLOUD.ACCESS_KEY }
+                });
+                const json = await res.json();
+                if(json.record && json.record.documents) {
+                    compiledDocs = compiledDocs.concat(json.record.documents);
+                }
+            }
+        } catch(err) {
+            console.error("Global compilation block failed", err);
+        }
+        
+        h = '';
+        if(compiledDocs.length === 0) {
+            h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available across any cloud bin configurations.</div>`;
+        } else {
+            compiledDocs.forEach((d) => {
+                h += `<div class="doc-card">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
+                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">📄 ${d.name}</div>
+                    <button onclick="window.open('${d.link}', '_blank')" class="btn btn-blue" style="margin-top: auto; justify-content: center; width:100%; font-size:12px;">👁 View PDF (G-Drive)</button>
+                </div>`;
+            });
+        }
+    } else {
+        let viewDocs = documents;
+        if(viewDocs.length === 0) {
+            h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available under active session cloud parameters.</div>`;
+        } else {
+            viewDocs.forEach((d) => {
+                h += `<div class="doc-card">
+                    <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
+                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">📄 ${d.name}</div>
+                    <button onclick="openDocument(${d.id})" class="btn btn-blue" style="margin-top: auto; justify-content: center; width:100%; font-size:12px;">👁 View PDF (G-Drive)</button>
+                </div>`;
+            });
+        }
+    }
+    document.getElementById('docGallery').innerHTML = h;
+}
+
+function openDocument(docId) {
+    const doc = documents.find(d => d.id === docId);
+    if (!doc) return sysAlert("Document record context missing from memory registry pool.");
+    if (doc.link) {
+        window.open(doc.link, "_blank");
+    }
+}
+
 function editUser(i) {
     const u = config.users[i];
     document.getElementById('userEditForm').classList.remove('hidden');
@@ -1123,78 +1260,11 @@ function saveUser() {
 }
 
 function delUser(i) {
-    sysConfirm(`Delete member ${config.users[i].name}?`, () => {
+    sysConfirm(`Delete member profile ${config.users[i].name}?`, () => {
         config.users.splice(i,1);
         CLOUD.syncConfig();
         renderAdminUsers();
     });
-}
-
-// --- Dynamic Document Link Infrastructure ---
-function saveDocLink() {
-    const sess = document.getElementById('upDocSess').value;
-    const name = document.getElementById('upDocName').value.trim();
-    const link = document.getElementById('upDocLink').value.trim();
-    
-    if(!name || !link) return sysAlert("Please provide both the document name and a Google Drive link.");
-
-    try {
-        documents.push({ id: Date.now(), sess: sess, name: name, link: link });
-        config.documents = documents;
-        CLOUD.syncConfig();
-        
-        sysAlert("Google Drive document resource link bound to financial session " + sess + " and successfully updated on the cloud ecosystem!", "Link Saved and Cloud Synced");
-        document.getElementById('upDocName').value = "";
-        document.getElementById('upDocLink').value = "";
-        renderAdminDocs();
-    } catch(err) {
-        sysAlert("Error saving link.", "Error");
-    }
-}
-
-function renderAdminDocs() {
-    let h = '';
-    documents.forEach((d, i) => {
-        h += `<tr><td>${d.sess}</td><td>${d.name}</td><td><button onclick="delDoc(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">🗑 Delete</button></td></tr>`;
-    });
-    document.getElementById('upDocList').innerHTML = h;
-}
-
-function delDoc(i) {
-    sysConfirm("Delete this document link?", () => {
-        documents.splice(i,1);
-        config.documents = documents;
-        CLOUD.syncConfig();
-        renderAdminDocs();
-    });
-}
-
-function renderDocGallery() {
-    const filter = document.getElementById('docViewSess').value;
-    let viewDocs = documents;
-    if(filter !== 'ALL') viewDocs = documents.filter(d => d.sess === filter);
-    
-    let h = '';
-    if(viewDocs.length === 0) {
-        h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available for the selected criteria.</div>`;
-    } else {
-        viewDocs.forEach((d) => {
-            h += `<div class="doc-card">
-                <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
-                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">📄 ${d.name}</div>
-                <button onclick="openDocument(${d.id})" class="btn btn-blue" style="margin-top: auto; justify-content: center; width:100%; font-size:12px;">👁 View PDF (G-Drive)</button>
-            </div>`;
-        });
-    }
-    document.getElementById('docGallery').innerHTML = h;
-}
-
-function openDocument(docId) {
-    const doc = documents.find(d => d.id === docId);
-    if (!doc) return sysAlert("Document record not found.");
-    if (doc.link) {
-        window.open(doc.link, "_blank");
-    }
 }
 </script>
 </body>
