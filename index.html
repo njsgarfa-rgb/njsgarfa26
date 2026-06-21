@@ -469,7 +469,7 @@ const CLOUD = {
 
     async sync() {
         try {
-            await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -477,11 +477,22 @@ const CLOUD = {
                     "X-Access-Key": this.ACCESS_KEY
                 },
                 body: JSON.stringify(this.data)
-            });
-        } catch(e) {
-            console.error("Critical Cloud Push Error: ", e);
-            sysAlert("Failed to sync structural properties to Cloud Engine.");
+            }
+        );
+
+        if (!res.ok) {
+            const txt = await res.text();
+            console.error(txt);
+            sysAlert(txt);
+            return false;
         }
+
+        return true;
+
+    } catch (e) {
+        console.error(e);
+        sysAlert("Cloud sync failed");
+        return false;
     }
 };
 
@@ -540,14 +551,21 @@ window.onload = async () => {
     let rawCfg = CLOUD.get('njs_cfg_v16');
     
     if (rawCfg) {
-        config = JSON.parse(rawCfg);
-    } else {
-        config = {
-            club: 'Garfa Nobojyoti Sangha',
-            cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
-            sessions: ['2023-24', '2024-25'],
-            passA: 'admin123',
-            sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary',
+    config = JSON.parse(rawCfg);
+
+    // Ensure sessions array exists
+    if (!Array.isArray(config.sessions)) {
+        config.sessions = ['2023-24', '2024-25'];
+    }
+} else {
+    config = {
+        club: 'Garfa Nobojyoti Sangha',
+        cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
+        sessions: ['2023-24', '2024-25'],
+        passA: 'admin123',
+        sigA: 'Approved By',
+        sigT: 'Treasurer',
+        sigS: 'Secretary',
             users: [
                 { name: 'Ranjit Dutta', key: 'A1B2C3', validTill: '12/2025', role: 'member' },
                 { name: 'Sibi Rai', key: 'D4E5F6', validTill: '12/2026', role: 'member' },
@@ -711,15 +729,29 @@ async function promptNewSession() {
     const s = prompt("Enter Name for the new Session (e.g. 2026-27 or Annual Event):");
     if(s && s.trim() !== '') {
         const clean = s.trim();
-        if(!config.sessions.includes(clean)) {
-            config.sessions.push(clean);
-            
-            CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-            await CLOUD.sync();
-            
-            sysAlert(`New financial cycle session context "${clean}" generated and dynamically saved to cloud configuration assets!`, "Session Pushed");
-        }
-        await switchSession(clean);
+        if (!config.sessions.includes(clean)) {
+
+    config.sessions.push(clean);
+
+    CLOUD.set(
+        "njs_cfg_v16",
+        JSON.stringify(config)
+    );
+
+    const ok = await CLOUD.sync();
+
+    if (!ok) {
+
+        // rollback
+        config.sessions.pop();
+
+        return sysAlert(
+            "Session was not saved to cloud."
+        );
+    }
+}
+
+await switchSession(clean);
     }
 }
 
