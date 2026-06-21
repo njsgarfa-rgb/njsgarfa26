@@ -29,12 +29,14 @@
         .container { max-width: 1250px; margin: 0 auto; padding: 15px; }
         .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
 
+        .banner-img { width: 100%; max-width: 800px; display: block; margin: 0 auto 20px auto; border-radius: 8px; }
+
         .control-bar { display: flex; flex-wrap: wrap; gap: 10px; background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px; align-items: center; border: 1px solid var(--border); }
         .tool-group { display: flex; align-items: center; gap: 8px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
 
-        .table-container { overflow-x: auto; margin-top: 10px; }
+        .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: var(--primary); color: white; padding: 12px; text-align: left; font-weight: 600; }
+        th { background: var(--primary); color: white; padding: 12px; text-align: left; }
         td { padding: 10px; border-bottom: 1px solid var(--border); }
         tr:hover { background-color: #f8fafc; }
 
@@ -57,7 +59,7 @@
         .badge { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 12px; display: inline-flex; border: 1px solid var(--border); margin: 2px; align-items: center; gap: 6px; }
         .hidden { display: none !important; }
         
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top: 5px; font-size: 14px; background: #fff; transition: 0.2s; box-sizing: border-box; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top: 5px; font-size: 14px; background: #fff; transition: 0.2s; }
         input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.1); }
         label { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -79,9 +81,6 @@
 
         .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
         .doc-card { padding: 15px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-
-        .ledger-box { margin-bottom: 30px; border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: white; }
-        .ledger-title { font-weight: 700; font-size: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; margin-bottom: 10px; color: var(--primary); }
 
         @media (max-width: 600px) { .control-bar { flex-direction: column; align-items: stretch; } }
         @media print { .bottom-nav, header, .no-print, .control-bar, .admin-tabs { display: none !important; } body { padding: 0; background: white; } .card { border: none; box-shadow: none; padding: 0; margin: 0; } }
@@ -121,10 +120,10 @@
             <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 25px;">Select your profile and enter your secure key.</p>
             
             <div style="text-align: left;">
-                <label for="pubLoginSelect">Select Member</label>
+                <label>Select Member</label>
                 <select id="pubLoginSelect"></select>
                 
-                <label for="pubLoginKey">Access Key</label>
+                <label>Access Key</label>
                 <input type="password" id="pubLoginKey" placeholder="Enter 6-digit key (e.g. A7K9P2)">
             </div>
             
@@ -136,7 +135,7 @@
             <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 25px;">Restricted zone. Authorized personnel only.</p>
             
             <div style="text-align: left;">
-                <label for="admLoginPass">Master Password</label>
+                <label>Master Password</label>
                 <input type="password" id="admLoginPass" placeholder="Enter administrator password">
             </div>
             
@@ -153,11 +152,10 @@
         <div id="dispClub" style="font-weight:800; font-size: 1.2rem; letter-spacing: -0.5px;"></div>
         <div id="dispUser" style="font-size:11px; opacity: 0.9; margin-top: 2px;"></div>
     </div>
-    <button onclick="logoutSession()" class="btn btn-ghost" style="padding: 6px 12px; color: var(--primary); border: none;">LOGOUT</button>
+    <button onclick="location.reload()" class="btn btn-ghost" style="padding: 6px 12px; color: var(--primary); border: none;">LOGOUT</button>
 </header>
 
 <div class="container hidden" id="appContainer">
-    
     <div id="dashboard" class="app-section">
         <div class="control-bar no-print">
             <div class="tool-group">
@@ -184,18 +182,7 @@
             </div>
             <div class="table-container">
                 <table id="mainTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Voucher</th>
-                            <th>Particulars</th>
-                            <th>Category</th>
-                            <th>In (+)</th>
-                            <th>Out (-)</th>
-                            <th>Balance</th>
-                            <th class="no-print admin-only-cell">Action</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Date</th><th>Voucher</th><th>Particulars</th><th>Category</th><th>In (+)</th><th>Out (-)</th><th>Balance</th><th class="no-print admin-only-cell">Action</th></tr></thead>
                     <tbody id="txnBody"></tbody>
                 </table>
             </div>
@@ -206,18 +193,18 @@
         <h3 id="formTitle" style="color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px;">New Transaction Entry</h3>
         <input type="hidden" id="editIdx" value="-1">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-            <div><label for="tDate">Transaction Date</label><input type="date" id="tDate" onchange="genAI()"></div>
-            <div><label for="tVou">Voucher Number</label><input id="tVou" placeholder="e.g. 001" oninput="genAI()"></div>
+            <div><label>Transaction Date</label><input type="date" id="tDate" onchange="genAI()"></div>
+            <div><label>Voucher Number</label><input id="tVou" placeholder="e.g. 001" oninput="genAI()"></div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-            <div><label for="tCat">Account Head (Category)</label><select id="tCat" onchange="genAI()"></select></div>
-            <div><label for="tMem">Member / Entity</label><select id="tMem" onchange="genAI()"></select></div>
+            <div><label>Account Head (Category)</label><select id="tCat" onchange="genAI()"></select></div>
+            <div><label>Member / Entity</label><select id="tMem" onchange="genAI()"></select></div>
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-            <div><label for="tAmt">Amount (₹)</label><input type="number" id="tAmt" placeholder="0.00" oninput="genAI()"></div>
-            <div><label for="tType">Entry Type</label><select id="tType" onchange="genAI()"><option value="dr">Money Receipt (Dr / In)</option><option value="cr">Payment Voucher (Cr / Out)</option></select></div>
+            <div><label>Amount (₹)</label><input type="number" id="tAmt" placeholder="0.00" oninput="genAI()"></div>
+            <div><label>Entry Type</label><select id="tType" onchange="genAI()"><option value="dr">Money Receipt (Dr / In)</option><option value="cr">Payment Voucher (Cr / Out)</option></select></div>
         </div>
-        <label for="tBeing">System Auto-Narration</label>
+        <label>System Auto-Narration</label>
         <textarea id="tBeing" rows="2" style="background: #f8fafc; font-style: italic; color: #475569;"></textarea>
         <div style="display:flex; gap:10px; margin-top:25px;">
             <button onclick="saveTxn()" class="btn btn-primary" style="flex: 2; padding: 15px; font-size: 15px;">POST TRANSACTION</button>
@@ -230,7 +217,7 @@
             <h3 style="margin-top:0; color: var(--primary);">General Ledgers</h3>
             <div style="display:flex; flex-wrap: wrap; gap:10px; margin-bottom: 20px; align-items: flex-end;">
                 <div>
-                    <label style="margin-top:0" for="ledgerFilter">Filter Specific Head</label>
+                    <label style="margin-top:0">Filter Specific Head</label>
                     <select id="ledgerFilter" onchange="renderLedger()" style="margin:0; width: 250px;"></select>
                 </div>
                 <button onclick="renderAllLedgers()" class="btn btn-primary" style="height: 42px;">View All Active Heads</button>
@@ -263,7 +250,7 @@
             <h3 style="margin-top:0; color: var(--primary);">Session Documents & Circulars</h3>
             <p style="font-size: 13px; color: var(--text-muted);">View and download formal updates or PDFs linked through Google Drive across all financial sessions.</p>
             <div style="margin-bottom: 20px;">
-                <label for="docViewSess">Filter by Session</label>
+                <label>Filter by Session</label>
                 <select id="docViewSess" onchange="renderDocGallery()" style="max-width: 300px;"></select>
             </div>
             <div id="docGallery" class="doc-grid"></div>
@@ -272,7 +259,7 @@
 
     <div id="adminSection" class="app-section hidden admin-only">
         <div class="card" style="padding-bottom: 0;">
-            <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
+	    <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
             <div class="admin-tabs">
                 <div class="admin-tab active" onclick="switchAdminTab('admGeneral', this)">General Settings</div>
                 <div class="admin-tab" onclick="switchAdminTab('admUsers', this)">Password & Members</div>
@@ -282,8 +269,8 @@
         </div>
 
         <div id="admGeneral" class="admin-panel card">
-            <label for="admClub">Organization Name</label><input id="admClub">
-            <label for="admPassA">Master Admin Password</label><input id="admPassA" type="password">
+            <label>Organization Name</label><input id="admClub">
+            <label>Master Admin Password</label><input id="admPassA" type="password">
             
             <label>Master Signatories (For Printouts)</label>
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
@@ -296,11 +283,8 @@
             
             <div>
                 <label>Manage Account Heads (Categories)</label>
-                <div id="admCatList" style="padding:10px 0; max-height:150px; overflow-y:auto; margin-bottom: 10px;"></div>
-                <div style="display:flex; gap:5px; max-width: 400px;">
-                    <input id="newC" placeholder="New category head...">
-                    <button onclick="addCfg('cats','newC')" class="btn btn-success">Add Head</button>
-                </div>
+                <div id="admCatList" style="padding:10px 0; max-height:150px; overflow-y:auto;"></div>
+                <div style="display:flex; gap:5px; max-width: 400px;"><input id="newC" placeholder="New category head..."><button onclick="addCfg('cats','newC')" class="btn btn-success">Add Head</button></div>
             </div>
 
             <hr style="margin:25px 0; border:0; border-top:1px solid var(--border)">
@@ -331,19 +315,19 @@
             <div id="userEditForm" class="hidden" style="margin-top: 25px; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;">
                 <h4 id="userFormTitle" style="margin-top: 0;">Add / Edit Member</h4>
                 <input type="hidden" id="editUserIdx" value="-1">
-                <label for="uName">Member Name</label>
+                <label>Member Name</label>
                 <input id="uName" placeholder="e.g. John Doe">
                 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                     <div>
-                        <label for="uKey">Unique 6-Digit Key</label>
+                        <label>Unique 6-Digit Key</label>
                         <div style="display: flex; gap: 5px;">
                             <input id="uKey" placeholder="A7K9P2" maxlength="6" style="text-transform: uppercase;">
                             <button onclick="document.getElementById('uKey').value = Math.random().toString(36).substring(2,8).toUpperCase()" class="btn btn-ghost" style="margin-top: 5px;">Generate</button>
                         </div>
                     </div>
                     <div>
-                        <label for="uValid">Valid Till (MM/YYYY)</label>
+                        <label>Valid Till (MM/YYYY)</label>
                         <input id="uValid" placeholder="12/2026">
                     </div>
                 </div>
@@ -359,10 +343,10 @@
         <div id="admUploads" class="admin-panel card hidden">
             <h4 style="margin-top: 0;">Add Session Documents (G-Drive)</h4>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom: 15px;">
-                <div><label for="upDocSess">Assign to Session</label><select id="upDocSess"></select></div>
-                <div><label for="upDocName">Event / Document Name</label><input id="upDocName" placeholder="e.g. Durga Puja Audit Report"></div>
+                <div><label>Assign to Session</label><select id="upDocSess"></select></div>
+                <div><label>Event / Document Name</label><input id="upDocName" placeholder="e.g. Durga Puja Audit Report"></div>
             </div>
-            <label for="upDocLink">Google Drive Link</label>
+            <label>Google Drive Link</label>
             <input type="url" id="upDocLink" placeholder="https://drive.google.com/..." style="padding: 10px; background: white; width: 100%;">
             <button onclick="saveDocLink()" class="btn btn-success" style="margin-top: 15px; width: 100%; padding: 12px;">SAVE & BIND LINK</button>
 
@@ -426,7 +410,7 @@
 </nav>
 
 <script>
-// --- Custom Modal System Controllers ---
+// --- Custom Modal System ---
 function sysAlert(msg, title='Notification') {
     document.getElementById('alertTitle').innerText = title;
     document.getElementById('alertMsg').innerText = msg;
@@ -445,7 +429,7 @@ function resolveConfirm(res) {
     confirmCallback = null;
 }
 
-// --- Cloud Storage Adapter (JSONBin.io Rest Engine Mapping) ---
+// --- Cloud Storage Adapter (JSONBin.io) with Synchronous Dynamic Interlock ---
 const CLOUD = {
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
     ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
@@ -454,39 +438,55 @@ const CLOUD = {
 
     async init() {
         const loader = document.createElement('div');
-        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;font-family:\'Inter\';font-weight:600;color:var(--primary);">Connecting Cloud Module Engine...</div>';
+        loader.id = "cloudLoaderOverlay";
+        loader.innerHTML = '<div style="position:fixed;inset:0;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;gap:15px;justify-content:center;align-items:center;z-index:99999;font-family:sans-serif;font-weight:600;color:#881337;">🔄 Synced Connection with Cloud Ledger Engine...</div>';
         document.body.appendChild(loader);
 
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
-                headers: { "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY }
+                headers: {
+                    "X-Master-Key": this.API_KEY,
+                    "X-Access-Key": this.ACCESS_KEY
+                }
             });
             const json = await res.json();
             this.data = json.record || {};
         } catch(e) {
-            sysAlert("Cloud synchronous initialization failed. Check credentials.");
+            sysAlert("Cloud framework extraction error.");
         }
-        document.body.removeChild(loader);
+        
+        const target = document.getElementById("cloudLoaderOverlay");
+        if(target) target.remove();
     },
 
-    get(key) { return this.data[key] || null; },
-    set(key, val) { this.data[key] = val; this.sync(); },
+    get(key) {
+        return this.data[key] || null;
+    },
+
+    set(key, val) {
+        this.data[key] = val;
+    },
 
     async sync() {
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
                 method: "PUT",
-                headers: { "Content-Type": "application/json", "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY },
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Master-Key": this.API_KEY,
+                    "X-Access-Key": this.ACCESS_KEY
+                },
                 body: JSON.stringify(this.data)
             });
         } catch(e) {
-            console.error("Cloud engine communication sync failure encountered:", e);
+            console.error("Critical Cloud Push Error: ", e);
+            sysAlert("Failed to sync structural properties to Cloud Engine.");
         }
     }
 };
 
-// --- Core Models, Framework States & HTML Layout Blocks ---
-let curSess, config, records = [], documents = [], currentUserObj = null;
+// --- Data Models & State ---
+let curSess, config, records, documents, currentUserObj;
 
 const staticBannerHTML = `
 <div style="display: flex; align-items: stretch; max-width: 800px; margin: 0 auto 20px auto; color: #a31621; font-family: Arial, sans-serif; background: white; overflow: hidden; padding: 10px;">
@@ -528,28 +528,94 @@ function fmtDate(dStr) {
     const str = String(dStr);
     const parts = str.split('-');
     if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    return dStr;
+    return str;
 }
 
-// --- Dynamic View Navigation and Layout Engine ---
-function showAppSection(id) {
-    document.querySelectorAll('.app-section').forEach(el => el.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
+// --- Initialization & Auth Flow ---
+window.onload = async () => {
+    await CLOUD.init();
+    currentUserObj = JSON.parse(CLOUD.get("njs_login_state") || "null");
     
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    if(id === 'dashboard') document.getElementById('navJournal')?.classList.add('active');
-    if(id === 'entrySection') document.getElementById('navEntry')?.classList.add('active');
-    if(id === 'ledgerSection') document.getElementById('navLedger')?.classList.add('active');
-    if(id === 'trialSection') document.getElementById('navReports')?.classList.add('active');
-    if(id === 'docSection') document.getElementById('navDocs')?.classList.add('active');
-    if(id === 'adminSection') document.getElementById('navAdmin')?.classList.add('active');
+    curSess = CLOUD.get('njs_active_sess') || '2024-25';
+    let rawCfg = CLOUD.get('njs_cfg_v16');
     
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+    if (rawCfg) {
+        config = JSON.parse(rawCfg);
+    } else {
+        config = {
+            club: 'Garfa Nobojyoti Sangha',
+            cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
+            sessions: ['2023-24', '2024-25'],
+            passA: 'admin123',
+            sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary',
+            users: [
+                { name: 'Ranjit Dutta', key: 'A1B2C3', validTill: '12/2025', role: 'member' },
+                { name: 'Sibi Rai', key: 'D4E5F6', validTill: '12/2026', role: 'member' },
+                { name: 'Ranjit Gayen', key: 'G7H8I9', validTill: '10/2026', role: 'member' },
+                { name: 'Tapas Das', key: 'J0K1L2', validTill: '03/2026', role: 'member' },
+                { name: 'Swarup Roy', key: 'M3N4O5', validTill: '08/2024', role: 'member' },
+                { name: 'Apan Roy', key: 'P6Q7R8', validTill: '09/2025', role: 'member' },
+                { name: 'Premchand Mondal', key: 'S9T0U1', validTill: '09/2025', role: 'member' },
+                { name: 'Kalyan Karmakar', key: 'V2W3X4', validTill: '06/2025', role: 'member' },
+                { name: 'Prasanta Das', key: 'Y5Z6A7', validTill: '06/2025', role: 'member' },
+                { name: 'Arun Ghosh', key: 'B8C9D0', validTill: '11/2025', role: 'member' },
+                { name: 'Deb Kumar Deb', key: 'E1F2G3', validTill: '06/2026', role: 'member' },
+                { name: 'Chandan Sengupta', key: 'H4I5J6', validTill: '08/2025', role: 'member' },
+                { name: 'Bijoy Paul', key: 'K7L8M9', validTill: '03/2025', role: 'member' },
+                { name: 'Chanchal Sarkar', key: 'N0O1P2', validTill: '04/2025', role: 'member' },
+                { name: 'Anal Sharma Roy', key: 'Q3R4S5', validTill: '02/2025', role: 'member' },
+                { name: 'Samar Saha', key: 'T6U7V8', validTill: '04/2024', role: 'member' },
+                { name: 'Sushanta Sarkar', key: 'W9X0Y1', validTill: '01/2026', role: 'member' },
+                { name: 'Rajib Saha', key: 'Z2A3B4', validTill: '12/2025', role: 'member' },
+                { name: 'Goutam Paul', key: 'C5D6E7', validTill: '12/2025', role: 'member' },
+                { name: 'Joy Mukherjee', key: 'F8G9H0', validTill: '08/2025', role: 'member' },
+                { name: 'Amit Thakur', key: 'I1J2K3', validTill: '08/2025', role: 'member' },
+                { name: 'Gora Mondal', key: 'L4M5N6', validTill: '06/2025', role: 'member' },
+                { name: 'Shyamal Das', key: 'O7P8Q9', validTill: '04/2025', role: 'member' },
+                { name: 'Barun Deb', key: 'R0S1T2', validTill: '12/2025', role: 'member' },
+                { name: 'Tamal Das', key: 'U3V4W5', validTill: '10/2024', role: 'member' },
+                { name: 'Kartik Dutta', key: 'X6Y7Z8', validTill: '03/2024', role: 'member' }
+            ]
+        };
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.sync();
+    }
+
+    documents = JSON.parse(CLOUD.get('njs_docs_v16') || "[]");
+
+    document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
+    document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
+
+    let opts = '<option value="">-- Select Profile --</option>';
+    config.users.forEach(u => opts += `<option value="${u.name}">${u.name}</option>`);
+    document.getElementById('pubLoginSelect').innerHTML = opts;
+    
+    document.getElementById('lhDate').innerText = fmtDate(new Date().toISOString().split('T')[0]);
+};
 
 function showAdminLogin() {
     document.getElementById('memberLoginCard').classList.add('hidden');
     document.getElementById('adminLoginCard').classList.remove('hidden');
+}
+
+async function syncJournal() {
+    if(currentUserObj && currentUserObj.role === 'admin') {
+        CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
+        await CLOUD.sync();
+        sysAlert("Current ledger journals successfully saved and pushed to the cloud bin!", "Sync Complete");
+    } else {
+        sysAlert("Operation blocked: Admin verification required.");
+    }
+}
+
+async function saveAdminMembers() {
+    if(currentUserObj && currentUserObj.role === 'admin') {
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.sync();
+        sysAlert("All configuration profiles, keys, and access schedules successfully committed to cloud!", "Changes Synced");
+    } else {
+        sysAlert("Operation blocked: Admin verification required.");
+    }
 }
 
 function showMemberLogin() {
@@ -557,587 +623,460 @@ function showMemberLogin() {
     document.getElementById('memberLoginCard').classList.remove('hidden');
 }
 
-function switchAdminTab(panelId, tabEl) {
-    document.querySelectorAll('.admin-panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById(panelId).classList.remove('hidden');
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    tabEl.classList.add('active');
-}
-
-// --- Core Auth Lifecycle Controllers ---
-function loadInitialConfiguration() {
-    let rawCfg = CLOUD.get('njs_cfg_v16');
-    if(rawCfg) {
-        config = JSON.parse(rawCfg);
+function loginAdmin() {
+    const p = document.getElementById('admLoginPass').value;
+    if(p === config.passA) {
+        currentUserObj = { name: 'Administrator', role: 'admin' };
+        finalizeLogin();
     } else {
-        config = {
-            clubName: "GARFA NABOJYOTI SANGHA",
-            adminPass: "admin123",
-            sigA: "Approved By", sigT: "Treasurer", sigS: "Secretary",
-            sessions: ["2024-25"],
-            cats: ["Subscription", "Donation", "Building Fund", "Festival Expense", "Audit Fees", "Miscellaneous"],
-            users: [{name: "General Auditor", key: "AUD001", valid: "12/2026"}]
-        };
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        sysAlert("Invalid Master Password", "Access Denied");
     }
-    
-    let rawDocs = CLOUD.get('njs_docs_v16');
-    documents = rawDocs ? JSON.parse(rawDocs) : [];
-    
-    // Update structural dropdown lists globally
-    const uSel = document.getElementById('pubLoginSelect');
-    uSel.innerHTML = config.users.map(u => `<option value="${u.key}">${u.name}</option>`).join('');
-    
-    const upDocSess = document.getElementById('upDocSess');
-    upDocSess.innerHTML = config.sessions.map(s => `<option value="${s}">${s}</option>`).join('');
-    
-    const dViewSess = document.getElementById('docViewSess');
-    dViewSess.innerHTML = `<option value="ALL">All Active Sessions</option>` + config.sessions.map(s => `<option value="${s}">${s}</option>`).join('');
-    
-    const tCat = document.getElementById('tCat');
-    tCat.innerHTML = config.cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    
-    const tMem = document.getElementById('tMem');
-    tMem.innerHTML = config.users.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
 }
 
 function loginMember() {
-    const key = document.getElementById('pubLoginKey').value.trim();
-    const selectedKey = document.getElementById('pubLoginSelect').value;
-    const matchedUser = config.users.find(u => u.key === selectedKey && u.key === key);
+    const sel = document.getElementById('pubLoginSelect').value;
+    const key = document.getElementById('pubLoginKey').value.toUpperCase();
     
-    if(matchedUser) {
-        currentUserObj = { name: matchedUser.name, role: 'member' };
-        CLOUD.set("njs_login_state", JSON.stringify(currentUserObj));
-        bootstrapApplicationView();
+    if(!sel) return sysAlert("Please select a member profile.");
+    
+    const u = config.users.find(x => x.name === sel);
+    if(u && u.key === key) {
+        currentUserObj = u;
+        finalizeLogin();
+        setTimeout(() => {
+            sysAlert(`Your Club Membership Has been Updated Till ${u.validTill}`, "Login Successful");
+        }, 500);
     } else {
-        sysAlert("Invalid member verification access key.");
+        sysAlert("Invalid Access Key. Please check and try again.", "Authentication Failed");
     }
 }
 
-function loginAdmin() {
-    const pass = document.getElementById('admLoginPass').value;
-    if(pass === config.adminPass) {
-        currentUserObj = { name: "Administrator Console", role: 'admin' };
-        CLOUD.set("njs_login_state", JSON.stringify(currentUserObj));
-        bootstrapApplicationView();
-    } else {
-        sysAlert("Unauthorized password credentials.");
-    }
-}
-
-function logoutSession() {
-    currentUserObj = null;
-    CLOUD.set("njs_login_state", "null");
-    location.reload();
-}
-
-function bootstrapApplicationView() {
-    if(!currentUserObj) return;
-    
+function finalizeLogin() {
     document.getElementById('publicHomepage').classList.add('hidden');
     document.getElementById('mainHeader').classList.remove('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     document.getElementById('mobileNav').classList.remove('hidden');
     
-    document.getElementById('dispClub').innerText = config.clubName;
-    document.getElementById('dispUser').innerText = `Authorized Operational Scope: ${currentUserObj.name}`;
+    document.getElementById('dispClub').innerText = config.club;
+    document.getElementById('dispUser').innerText = `Logged in as: ${currentUserObj.name} | Role: ${currentUserObj.role.toUpperCase()}`;
     
-    // Evaluate permissions Matrix
-    if(currentUserObj.role !== 'admin') {
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.admin-only-cell').forEach(el => el.classList.add('hidden'));
-    } else {
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-        document.querySelectorAll('.admin-only-cell').forEach(el => el.classList.remove('hidden'));
+    const isAdmin = currentUserObj.role === 'admin';
+    document.querySelectorAll('.admin-only').forEach(el => {
+        if(isAdmin) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    });
+    
+    if(!isAdmin) {
+        document.querySelectorAll('.admin-only-cell').forEach(el => el.style.display = 'none');
     }
-    
-    buildSessionDropdowns();
-    switchSession(curSess);
+
+    loadRecordsForSession();
+    updateDrops();
     showAppSection('dashboard');
 }
 
-function buildSessionDropdowns() {
-    const sSel = document.getElementById('sessionSelect');
-    sSel.innerHTML = config.sessions.map(s => `<option value="${s}">${s}</option>`).join('');
-    sSel.value = curSess;
+function showAppSection(id) {
+    document.querySelectorAll('.app-section').forEach(d => d.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(d => d.classList.remove('active'));
+
+    const navMap = {
+        dashboard:'navJournal',
+        entrySection:'navEntry',
+        ledgerSection:'navLedger',
+        trialSection:'navReports',
+        docSection:'navDocs',
+        adminSection:'navAdmin'
+    };
+
+    if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
 }
 
-function switchSession(sessName) {
-    curSess = sessName;
-    CLOUD.set('njs_active_sess', curSess);
+async function switchSession(v) { 
+    curSess = v; 
+    CLOUD.set('njs_active_sess', v); 
     
-    let rawTxns = CLOUD.get('njs_txns_' + curSess);
-    records = rawTxns ? JSON.parse(rawTxns) : [];
+    loadRecordsForSession();
+    updateDrops();
     
-    renderDaybookTable();
+    if(!document.getElementById('dashboard').classList.contains('hidden')) refresh();
+    if(!document.getElementById('ledgerSection').classList.contains('hidden')) renderLedger();
+    if(!document.getElementById('trialSection').classList.contains('hidden')) { renderTrial(); renderSummary(); }
+    if(!document.getElementById('docSection').classList.contains('hidden')) renderDocGallery();
+
+    await CLOUD.sync();
 }
 
-function promptNewSession() {
-    const name = prompt("Enter new accounting sequence timeline index (e.g. 2025-26):");
-    if(!name) return;
-    const sanitized = name.trim();
-    if(!config.sessions.includes(sanitized)) {
-        config.sessions.push(sanitized);
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-        loadInitialConfiguration();
-        buildSessionDropdowns();
-        switchSession(sanitized);
+async function promptNewSession() {
+    const s = prompt("Enter Name for the new Session (e.g. 2026-27 or Annual Event):");
+    if(s && s.trim() !== '') {
+        const clean = s.trim();
+        if(!config.sessions.includes(clean)) {
+            config.sessions.push(clean);
+            
+            CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+            await CLOUD.sync();
+            
+            sysAlert(`New financial cycle session context "${clean}" generated and dynamically saved to cloud configuration assets!`, "Session Pushed");
+        }
+        await switchSession(clean);
     }
 }
 
-// --- Data View Render Engines (Journal & Calculations) ---
-function renderDaybookTable() {
-    const tbody = document.getElementById('txnBody');
-    tbody.innerHTML = '';
-    
-    let currentRunningBalance = 0;
-    
-    if(records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${currentUserObj.role === 'admin' ? 8 : 7}" style="text-align:center; padding:30px; color:var(--text-muted);">No transactional ledger entries posted inside current timeframe.</td></tr>`;
-        return;
-    }
+function loadRecordsForSession() {
+    records = JSON.parse(CLOUD.get('njs_db_' + curSess) || "[]");
+    refresh();
+}
 
-    records.forEach((r, idx) => {
-        const amt = parseFloat(r.amt || 0);
-        let incoming = 0, outgoing = 0;
-        
-        if(r.type === 'dr') { incoming = amt; currentRunningBalance += amt; }
-        else { outgoing = amt; currentRunningBalance -= amt; }
-        
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${fmtDate(r.date)}</td>
-            <td><span class="badge" style="color:var(--blue)">#${r.vou || idx+1}</span></td>
-            <td><strong>${r.mem}</strong><br><small style="color:var(--text-muted)">${r.being || ''}</small></td>
-            <td><span class="badge">${r.cat}</span></td>
-            <td style="color:var(--success); font-weight:600">${incoming ? '₹' + incoming.toFixed(2) : '-'}</td>
-            <td style="color:var(--danger); font-weight:600">${outgoing ? '₹' + outgoing.toFixed(2) : '-'}</td>
-            <td style="font-weight:700; color:${currentRunningBalance >= 0 ? 'var(--text-main)' : 'var(--danger)'}">₹${currentRunningBalance.toFixed(2)}</td>
-            <td class="no-print admin-only-cell ${currentUserObj.role !== 'admin' ? 'hidden' : ''}">
-                <button onclick="editTxn(${idx})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;">✏️</button>
-                <button onclick="deleteTxn(${idx})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">✕</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
+function refresh() {
+    records.sort((a,b) => {
+        let da = new Date(a.date).getTime() || 0;
+        let db = new Date(b.date).getTime() || 0;
+        return da - db;
     });
-}
+    let bal = 0, h = '', totalDr = 0, totalCr = 0;
+    const isAdmin = currentUserObj && currentUserObj.role === 'admin';
 
-// --- Transactions Form Routing (CRUD) ---
-function resetForm() {
-    document.getElementById('editIdx').value = "-1";
-    document.getElementById('formTitle').innerText = "New Transaction Entry";
-    document.getElementById('tDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('tVou').value = records.length ? String(records.length + 1).padStart(3, '0') : "001";
-    document.getElementById('tAmt').value = '';
-    document.getElementById('tBeing').value = '';
-    genAI();
+    records.forEach((r, i) => {
+        r.dr = parseFloat(String(r.dr).replace(/[^0-9.-]+/g,"")) || 0;
+        r.cr = parseFloat(String(r.cr).replace(/[^0-9.-]+/g,"")) || 0;
+
+        bal = parseFloat((bal + r.dr - r.cr).toFixed(2));
+        totalDr = parseFloat((totalDr + r.dr).toFixed(2));
+        totalCr = parseFloat((totalCr + r.cr).toFixed(2));
+        
+        let balColor = bal >= 0 ? 'var(--success)' : 'var(--danger)';
+        let balStr = bal >= 0 ? `₹${bal}` : `-₹${Math.abs(bal)}`;
+
+        h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou||'-'}</td><td>${r.mem}</td><td>${r.cat}</td>
+        <td style="color:var(--success); font-weight:600">₹${r.dr}</td><td style="color:var(--danger); font-weight:600">₹${r.cr}</td>
+        <td style="color:${balColor}; font-weight:700">${balStr}</td>
+        <td class="no-print" style="white-space:nowrap; ${!isAdmin ? 'display:none;' : ''}">
+            <button onclick="printV(${i})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;" title="Print">⎙</button>
+            <button onclick="editRec(${i})" class="btn btn-warn" style="padding:4px 8px; font-size:11px;" title="Edit">✎</button>
+            <button onclick="delRec(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;" title="Delete">×</button>
+        </td></tr>`;
+    });
+    
+    h += `<tr style="background:#f1f5f9; font-weight:700;">
+        <td colspan="4" style="text-align:right; color:var(--primary);">TOTAL (SESSION):</td>
+        <td style="color:var(--success);">₹${totalDr}</td>
+        <td style="color:var(--danger);">₹${totalCr}</td>
+        <td style="color:${bal >= 0 ? 'var(--success)' : 'var(--danger)'};">₹${bal >= 0 ? bal : '-'+Math.abs(bal)}</td>
+        <td class="no-print" style="${!isAdmin ? 'display:none;' : ''}"></td>
+    </tr>`;
+
+    document.getElementById('txnBody').innerHTML = h;
+    CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
 }
 
 function genAI() {
-    const date = document.getElementById('tDate').value;
-    const cat = document.getElementById('tCat').value;
-    const mem = document.getElementById('tMem').value;
-    const amt = document.getElementById('tAmt').value;
-    const type = document.getElementById('tType').value;
-    
-    let msg = `Being amount received from ${mem || '[Entity]'} under account head ${cat || '[Head]'}`;
-    if(type === 'cr') {
-        msg = `Being operational expense paid to ${mem || '[Entity]'} for the purpose of ${cat || '[Head]'}`;
-    }
-    if(amt) msg += ` valued at ₹${parseFloat(amt).toFixed(2)}`;
-    if(date) msg += ` tracking date reference ${fmtDate(date)}.`;
-    
-    document.getElementById('tBeing').value = msg;
+    const t = document.getElementById('tType').value, m = document.getElementById('tMem').value, c = document.getElementById('tCat').value, a = document.getElementById('tAmt').value||0, v = document.getElementById('tVou').value||'N/A';
+    const action = t==='dr' ? 'received from' : 'paid to';
+    const doc = t==='dr' ? 'Money Receipt' : 'Payment Voucher';
+    document.getElementById('tBeing').value = `Being the amount ${action} ${m} on account of ${c} vide ${doc} No. ${v} amounting to Rs. ${a}/-.`;
 }
 
-function saveTxn() {
+async function saveTxn() {
     const idx = parseInt(document.getElementById('editIdx').value);
-    const date = document.getElementById('tDate').value;
-    const vou = document.getElementById('tVou').value.trim();
-    const cat = document.getElementById('tCat').value;
-    const mem = document.getElementById('tMem').value;
-    const amt = parseFloat(document.getElementById('tAmt').value || 0);
-    const type = document.getElementById('tType').value;
-    const being = document.getElementById('tBeing').value.trim();
-    
-    if(!date || !vou || amt <= 0) return sysAlert("Complete all foundational parameter data attributes accurately.");
-    
-    const obj = { date, vou, cat, mem, amt, type, being };
-    
-    if(idx === -1) {
-        records.push(obj);
-    } else {
-        records[idx] = obj;
-    }
-    
-    // Auto chronological balancing sorting loop
-    records.sort((a,b) => new Date(a.date) - new Date(b.date));
-    
-    renderDaybookTable();
+    const data = {
+        date: document.getElementById('tDate').value, vou: document.getElementById('tVou').value, cat: document.getElementById('tCat').value, mem: document.getElementById('tMem').value,
+        dr: document.getElementById('tType').value === 'dr' ? parseFloat(document.getElementById('tAmt').value)||0 : 0,
+        cr: document.getElementById('tType').value === 'cr' ? parseFloat(document.getElementById('tAmt').value)||0 : 0,
+        being: document.getElementById('tBeing').value
+    };
+    if(idx === -1) records.push(data); else records[idx] = data;
+    refresh(); 
+    await CLOUD.sync();
     showAppSection('dashboard');
-    sysAlert("Local session journal mutated. Synchronize with Cloud to seal state record permanently.", "Transaction Cached");
 }
 
-function editTxn(i) {
-    const r = records[i];
-    showAppSection('entrySection');
-    document.getElementById('editIdx').value = i;
-    document.getElementById('formTitle').innerText = "Modify Ledger Transaction Exception Trace";
-    document.getElementById('tDate').value = r.date;
-    document.getElementById('tVou').value = r.vou;
-    document.getElementById('tCat').value = r.cat;
-    document.getElementById('tMem').value = r.mem;
-    document.getElementById('tAmt').value = r.amt;
-    document.getElementById('tType').value = r.type;
-    document.getElementById('tBeing').value = r.being;
-}
-
-function deleteTxn(i) {
-    sysConfirm("Completely drop transaction trace row line item index mapping?", () => {
-        records.splice(i, 1);
-        renderDaybookTable();
-    });
-}
-
-function syncJournal() {
-    CLOUD.set('njs_txns_' + curSess, JSON.stringify(records));
-    sysAlert(`Daybook ledger for sequence sequence tracking framework context mapped [${curSess}] cleanly sealed into database.`, "Cloud Matrix Sealed");
-}
-
-function wipeData() {
-    sysConfirm("Irrevocably purge local structural working record list context tables?", () => {
-        records = [];
-        renderDaybookTable();
-    });
-}
-
-// --- Spreadsheet Engine Importer (XLSX API Layer) ---
+// --- Excel & PDF Integrations ---
 function importExcel(e) {
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = function(evt) {
-        const data = new Uint8Array(evt.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const rawJson = XLSX.utils.sheet_to_json(worksheet);
-        
-        // Parse mapping rows systematically
+    reader.onload = async (ev) => {
         try {
-            records = rawJson.map(row => ({
-                date: row.Date || new Date().toISOString().split('T')[0],
-                vou: String(row.Voucher || ''),
-                mem: row.Particulars || 'Unknown Entity Entry',
-                cat: row.Category || config.cats[0],
-                amt: parseFloat(row.Amount || row.In || row.Out || 0),
-                type: String(row.Type || 'dr').toLowerCase().includes('out') || row.Out ? 'cr' : 'dr',
-                being: row.Narration || 'Imported via spreadsheet process integration.'
-            }));
-            renderDaybookTable();
-            sysAlert("Spreadsheet compilation sequence read parsed successfully.");
+            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+            const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            
+            for (const x of data) {
+                let finalDate = new Date().toISOString().split('T')[0];
+                if (x.Date) {
+                    let d = String(x.Date).trim();
+                    if (d.includes('/')) {
+                        let p = d.split('/');
+                        if(p.length === 3) finalDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+                    } else if (d.includes('-')) {
+                        finalDate = d;
+                    } else if (!isNaN(d)) {
+                        let jsDate = new Date(Math.round((Number(d) - 25569) * 86400 * 1000));
+                        if(!isNaN(jsDate)) finalDate = jsDate.toISOString().split('T')[0];
+                    }
+                }
+
+                let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
+                if(parsedCat && !config.cats.includes(parsedCat)) {
+                    config.cats.push(parsedCat);
+                    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+                }
+
+                const cleanAmt = (val) => {
+                    if(!val) return 0;
+                    let num = parseFloat(String(val).replace(/[^0-9.-]+/g,""));
+                    return isNaN(num) ? 0 : num;
+                };
+
+                records.push({
+                    date: finalDate,
+                    vou: String(x.Voucher || x['Voucher#'] || ""),
+                    cat: parsedCat,
+                    mem: x.Particulars || x.Remark || "General",
+                    dr: cleanAmt(x['In (+)'] || x.In || x['Cash In (Dr)'] || 0),
+                    cr: cleanAmt(x['Out (-)'] || x.Out || x['Cash Out (Cr)'] || 0),
+                    being: x.Narration || x.Being || ""
+                });
+            }
+            refresh(); 
+            await CLOUD.sync();
+            sysAlert("Batch Excel Import Synced to Cloud Successfully!");
         } catch(err) {
-            sysAlert("Standard file parser template processing exception framework error parsing row sets.");
+            console.error(err);
+            sysAlert("Error importing file. Please verify format.", "Import Failed");
         }
+        e.target.value = ''; 
     };
     reader.readAsArrayBuffer(file);
 }
 
-// --- General Ledgers Rendering Module ---
-function renderLedger() {
-    const filterHead = document.getElementById('ledgerFilter').value;
-    const out = document.getElementById('ledgerOutput');
-    out.innerHTML = '';
-    
-    // Dynamically rebuild category configuration keys array
-    const lFilterSelect = document.getElementById('ledgerFilter');
-    const currentSelectedVal = lFilterSelect.value;
-    lFilterSelect.innerHTML = config.cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    if(currentSelectedVal && config.cats.includes(currentSelectedVal)) lFilterSelect.value = currentSelectedVal;
-
-    const targetHead = filterHead || config.cats[0];
-    if(!targetHead) return;
-    
-    const filteredTxns = records.filter(r => r.cat === targetHead);
-    out.appendChild(buildLedgerTableMarkup(targetHead, filteredTxns));
+function exportTable(id, name) {
+    const table = document.getElementById(id);
+    const ws = XLSX.utils.table_to_sheet(table);
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, `${name}_${curSess}.xlsx`);
 }
 
-function renderAllLedgers() {
-    const out = document.getElementById('ledgerOutput');
-    out.innerHTML = '';
-    config.cats.forEach(cat => {
-        const filtered = records.filter(r => r.cat === cat);
-        if(filtered.length > 0) {
-            out.appendChild(buildLedgerTableMarkup(cat, filtered));
-        }
-    });
-}
-
-function buildLedgerTableMarkup(title, filteredRecords) {
-    const container = document.createElement('div');
-    container.className = "ledger-box";
-    
-    let hStr = `<div class="ledger-title">📖 General Ledger Account: ${title}</div>`;
-    hStr += `<table>
-                <thead><tr><th>Date</th><th>Vou</th><th>Entity Mapping Account</th><th>Debit (In)</th><th>Credit (Out)</th></tr></thead>
-                <tbody>`;
-                
-    let totalIn = 0, totalOut = 0;
-    
-    if(filteredRecords.length === 0) {
-        hStr += `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); font-style:italic">No matching ledger postings discovered.</td></tr>`;
-    } else {
-        filteredRecords.forEach(r => {
-            let dr = r.type === 'dr' ? parseFloat(r.amt) : 0;
-            let cr = r.type === 'cr' ? parseFloat(r.amt) : 0;
-            totalIn += dr; totalOut += cr;
-            hStr += `<tr>
-                        <td>${fmtDate(r.date)}</td>
-                        <td>#${r.vou}</td>
-                        <td>${r.mem}</td>
-                        <td style="color:var(--success)">${dr ? '₹'+dr.toFixed(2) : '-'}</td>
-                        <td style="color:var(--danger)">${cr ? '₹'+cr.toFixed(2) : '-'}</td>
-                     </tr>`;
-        });
-    }
-    
-    hStr += `<tr style="background:#f1f5f9; font-weight:700;">
-                <td colspan="3" style="text-align:right">Total Transacted Movement Base:</td>
-                <td style="color:var(--success)">₹${totalIn.toFixed(2)}</td>
-                <td style="color:var(--danger)">₹${totalOut.toFixed(2)}</td>
-             </tr>`;
-             
-    let closingBal = totalIn - totalOut;
-    hStr += `<tr style="background:#e2e8f0; font-weight:800;">
-                <td colspan="3" style="text-align:right">Closing Dynamic Sub-Net Balance (By Balance C/D):</td>
-                <td colspan="2" style="text-align:left; color:${closingBal >=0 ? 'var(--success)' : 'var(--danger)'}">₹${closingBal.toFixed(2)} ${closingBal >= 0 ? '(Dr Balance)' : '(Cr Balance)'}</td>
-             </tr>`;
-             
-    hStr += `</tbody></table>`;
-    container.innerHTML = hStr;
-    return container;
-}
-
-// --- Financial Trial Statements Rendering engine Module ---
-function renderTrial() {
-    const out = document.getElementById('trialOutput');
-    out.innerHTML = '';
-    
-    let hStr = `<table id="tblTrial">
-                    <thead><tr><th>Account Classification Ledger Head</th><th>Debit (Dr) Balances</th><th>Credit (Cr) Balances</th></tr></thead>
-                    <tbody>`;
-                    
-    let totalTrialDr = 0, totalTrialCr = 0;
-    
-    config.cats.forEach(cat => {
-        const txns = records.filter(r => r.cat === cat);
-        let net = 0;
-        txns.forEach(t => { net += (t.type === 'dr' ? parseFloat(t.amt) : -parseFloat(t.amt)); });
-        
-        if(net !== 0) {
-            if(net > 0) {
-                totalTrialDr += net;
-                hStr += `<tr><td>${cat} A/c</td><td>₹${net.toFixed(2)}</td><td>-</td></tr>`;
-            } else {
-                let absAbs = Math.abs(net);
-                totalTrialCr += absAbs;
-                hStr += `<tr><td>${cat} A/c</td><td>-</td><td>₹${absAbs.toFixed(2)}</td></tr>`;
+function exportPDF(tableId, name) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFont("Helvetica");
+    doc.text(`${config.club || 'NJS Club'} - ${name} (${curSess})`, 14, 15);
+    doc.autoTable({ 
+        html: '#' + tableId, 
+        startY: 22,
+        styles: { font: "Helvetica", fontSize: 9 },
+        headStyles: { fillColor: [136, 19, 55] },
+        didParseCell: function(data) {
+            if (data.cell.element && (data.cell.element.classList.contains('no-print') || data.cell.element.classList.contains('admin-only-cell'))) {
+                data.cell.text = '';
             }
         }
     });
+    doc.save(`${name}_${curSess}.pdf`);
+}
+
+function editRec(i) {
+    const r = records[i]; showAppSection('entrySection');
+    document.getElementById('editIdx').value = i; document.getElementById('tDate').value = r.date;
+    document.getElementById('tVou').value = r.vou; document.getElementById('tCat').value = r.cat; document.getElementById('tMem').value = r.mem;
+    document.getElementById('tAmt').value = r.dr || r.cr; document.getElementById('tType').value = r.dr > 0 ? 'dr' : 'cr';
+    document.getElementById('tBeing').value = r.being;
+}
+
+function delRec(i) { sysConfirm("Permanently delete this journal entry?", async () => { records.splice(i,1); refresh(); await CLOUD.sync(); }); }
+function wipeData() { sysConfirm("DANGER: Wipe entire database for this session?", async () => { records = []; refresh(); await CLOUD.sync(); }); }
+function resetForm() { document.getElementById('editIdx').value = "-1"; document.getElementById('tDate').value = new Date().toISOString().split('T')[0]; document.getElementById('tAmt').value = ""; genAI(); }
+
+function updateDrops() {
+    const c = config.cats.map(x => `<option value="${x}">${x}</option>`).join('');
+    const m = config.users.map(x => `<option value="${x.name}">${x.name}</option>`).join('');
+    const s = config.sessions.map(x => `<option value="${x}" ${curSess===x?'selected':''}>${x}</option>`).join('');
     
-    hStr += `<tr style="background:#e2e8f0; font-weight:800; border-top:2px solid var(--primary)">
-                <td>Aggregated Summarized Accounting Balance Matrix Total:</td>
-                <td>₹${totalTrialDr.toFixed(2)}</td>
-                <td>₹${totalTrialCr.toFixed(2)}</td>
-             </tr>`;
-    hStr += `</tbody></table>`;
-    
-    if(totalTrialDr.toFixed(2) !== totalTrialCr.toFixed(2)) {
-        hStr += `<div style="margin-top:10px; color:var(--danger); font-size:12px; font-weight:700;">🚨 Warning: Trial Balance error variance gap uncovered. Rectify unmatched system journal voucher exceptions.</div>`;
+    document.getElementById('tCat').innerHTML = c; document.getElementById('tMem').innerHTML = m;
+    document.getElementById('ledgerFilter').innerHTML = c; 
+    document.getElementById('sessionSelect').innerHTML = s;
+    document.getElementById('docViewSess').innerHTML = `<option value="ALL">All Sessions</option>` + s;
+    document.getElementById('upDocSess').innerHTML = s;
+}
+
+function printV(i) {
+    const r = records[i];
+    const w = window.open('','','width=800,height=800');
+    w.document.write(`
+    <html><head><title>Print Voucher</title>
+    <style>body{font-family:sans-serif; margin:0; padding:20px;} .box{border:2px solid #000; padding:25px; max-width: 800px; margin: 0 auto;}</style>
+    </head><body>
+    <div class="box">
+        ${staticBannerHTML}
+        <center><h3 style="background:#eee; display:inline-block; padding:8px 15px; border:1px solid #000; border-radius:4px; margin-top: 5px;">${r.dr>0?'MONEY RECEIPT':'PAYMENT VOUCHER'}</h3></center>
+        <p style="margin-top: 20px;">No: <b>${r.vou||'N/A'}</b> <span style="float:right">Date: <b>${fmtDate(r.date)}</b></span></p>
+        <p><b>Particulars:</b> ${r.mem}</p><p><b>Account Head:</b> ${r.cat}</p><p><b>Being:</b> ${r.being}</p>
+        <h3 style="border:2px dotted #000; padding:15px; display:inline-block; background:#f9f9f9;">AMOUNT: ₹ ${r.dr||r.cr}/-</h3>
+        <div style="margin-top:80px; display:flex; justify-content:space-between; text-align:center;">
+            <div>__________________<br><br><b>${config.sigA}</b><br><small>Approved</small></div>
+            <div>__________________<br><br><b>${config.sigT}</b><br><small>Treasurer</small></div>
+            <div>__________________<br><br><b>${config.sigS}</b><br><small>Secretary</small></div>
+        </div>
+    </div>
+    <script>window.onload=()=>{window.print();window.close();}<\/script>
+    </body></html>`);
+    w.document.close();
+}
+
+function renderLedger() {
+    const f = document.getElementById('ledgerFilter').value;
+    const items = records.filter(r => r.cat === f);
+    let h = `<div class="card" style="border-left:5px solid var(--primary)"><h4>${f} Ledger</h4><table><thead><tr><th>Date</th><th>Voucher</th><th>Part</th><th>Dr</th><th>Cr</th><th>Balance</th></tr></thead><tbody>`;
+    if(items.length > 0) {
+        let catBal = 0;
+        items.forEach(r => {
+            catBal = parseFloat((catBal + (parseFloat(r.dr)||0) - (parseFloat(r.cr)||0)).toFixed(2));
+            let balStr = catBal >= 0 ? `₹${catBal}` : `-₹${Math.abs(catBal)}`;
+            h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">${balStr}</td></tr>`;
+        });
+    } else {
+        h += `<tr><td colspan="6" style="text-align:center; color:var(--text-muted)">No transactions recorded in this head.</td></tr>`;
     }
-    out.innerHTML = hStr;
+    document.getElementById('ledgerOutput').innerHTML = h + `</tbody></table></div>`;
+}
+
+function renderAllLedgers() {
+    let h = '';
+    config.cats.forEach(c => {
+        const items = records.filter(r => r.cat === c);
+        if(items.length > 0) {
+            h += `<div class="card"><h4>${c}</h4><table><thead><tr><th>Date</th><th>Voucher</th><th>Part</th><th>Dr</th><th>Cr</th><th>Balance</th></tr></thead><tbody>`;
+            let catBal = 0;
+            items.forEach(r => {
+                catBal = parseFloat((catBal + (parseFloat(r.dr)||0) - (parseFloat(r.cr)||0)).toFixed(2));
+                let balStr = catBal >= 0 ? `₹${catBal}` : `-₹${Math.abs(catBal)}`;
+                h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">${balStr}</td></tr>`;
+            });
+            h += `</tbody></table></div>`;
+        }
+    });
+    if (h === '') h = `<div class="card" style="text-align:center; color:var(--text-muted)">No transactions found in any active ledger.</div>`;
+    document.getElementById('ledgerOutput').innerHTML = h;
+}
+
+function renderTrial() {
+    let m = {}; let td=0, tc=0;
+    records.forEach(r => { if(!m[r.cat]) m[r.cat]={dr:0,cr:0}; m[r.cat].dr+=r.dr; m[r.cat].cr+=r.cr; });
+    let h = `<table id="tblTrial"><thead><tr><th>Account Head</th><th>Dr (Inflow)</th><th>Cr (Outflow)</th></tr></thead><tbody>`;
+    for(let k in m) { h += `<tr><td>${k}</td><td>₹${m[k].dr.toFixed(2)}</td><td>₹${m[k].cr.toFixed(2)}</td></tr>`; td+=m[k].dr; tc+=m[k].cr; }
+    h += `<tr style="background:#fef2f2; font-weight:700; color:var(--danger);"><td>CASH IN HAND (BALANCE)</td><td>-</td><td>₹${(td-tc).toFixed(2)}</td></tr><tr style="background:#ecfdf5; font-weight:700;"><td>GRAND TOTAL</td><td>₹${td.toFixed(2)}</td><td>₹${td.toFixed(2)}</td></tr></tbody></table>`;
+    document.getElementById('trialOutput').innerHTML = h;
 }
 
 function renderSummary() {
-    const out = document.getElementById('summaryOutput');
-    out.innerHTML = '';
-    
-    let hStr = `<table>
-                    <thead><tr><th>Total Cash Receipts (Inflow Stream)</th><th>Value Amount</th><th>Total Cash Payments (Outflow Stream)</th><th>Value Amount</th></tr></thead>
-                    <tbody>`;
-                    
-    let incomingLines = [], outgoingLines = [];
-    let grandIn = 0, grandOut = 0;
-    
-    config.cats.forEach(cat => {
-        const txns = records.filter(r => r.cat === cat);
-        let cin = 0, cout = 0;
-        txns.forEach(t => { if(t.type === 'dr') cin += parseFloat(t.amt); else cout += parseFloat(t.amt); });
-        
-        if(cin > 0) { incomingLines.push({ name: cat, val: cin }); grandIn += cin; }
-        if(cout > 0) { outgoingLines.push({ name: cat, val: cout }); grandOut += cout; }
-    });
-    
-    const maxLines = Math.max(incomingLines.length, outgoingLines.length);
-    for(let i=0; i<maxLines; i++) {
-        let inc = incomingLines[i] || { name: '-', val: 0 };
-        let outg = outgoingLines[i] || { name: '-', val: 0 };
-        hStr += `<tr>
-                    <td>${inc.name}</td><td>${inc.val ? '₹'+inc.val.toFixed(2) : '-'}</td>
-                    <td>${outg.name}</td><td>${outg.val ? '₹'+outg.val.toFixed(2) : '-'}</td>
-                 </tr>`;
-    }
-    
-    hStr += `<tr style="background:#f1f5f9; font-weight:700;">
-                <td>Gross Revenue Performance:</td><td>₹${grandIn.toFixed(2)}</td>
-                <td>Gross System Disbursements:</td><td>₹${grandOut.toFixed(2)}</td>
-             </tr>`;
-             
-    let residualNet = grandIn - grandOut;
-    hStr += `<tr style="background:#e2e8f0; font-weight:800;">
-                <td colspan="2" style="text-align:right">Net Retained Reserve Working Balance Status:</td>
-                <td colspan="2" style="color:${residualNet >= 0 ? 'var(--success)' : 'var(--danger)'}">₹${residualNet.toFixed(2)}</td>
-             </tr>`;
-             
-    hStr += `</tbody></table>`;
-    out.innerHTML = hStr;
+    let rm = {}, pm = {}, td=0, tc=0;
+    records.forEach(r => { if(r.dr>0){ rm[r.cat]=(rm[r.cat]||0)+r.dr; td+=r.dr; } else { pm[r.cat]=(pm[r.cat]||0)+r.cr; tc+=r.cr; } });
+    let h = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:15px;"><div><h4 style="color:var(--success)">TOTAL RECEIPTS</h4><table>`;
+    for(let c in rm) h += `<tr><td>${c}</td><td>₹${rm[c].toFixed(2)}</td></tr>`;
+    h += `<tr style="font-weight:700"><td>Total Inflow</td><td>₹${td.toFixed(2)}</td></tr></table></div><div><h4 style="color:var(--danger)">TOTAL PAYMENTS</h4><table>`;
+    for(let c in pm) h += `<tr><td>${c}</td><td>₹${pm[c].toFixed(2)}</td></tr>`;
+    h += `<tr style="color:var(--danger)"><td>CASH IN HAND</td><td>₹${(td-tc).toFixed(2)}</td></tr><tr style="font-weight:700"><td>Total Outflow</td><td>₹${td.toFixed(2)}</td></tr></table></div></div>`;
+    document.getElementById('summaryOutput').innerHTML = h;
 }
 
-// --- G-Drive Virtual Document Repository System ---
-function renderDocGallery() {
-    const filter = document.getElementById('docViewSess').value;
-    let viewDocs = documents;
-    if(filter !== 'ALL') viewDocs = documents.filter(d => d.sess === filter);
-    
-    let h = '';
-    if(viewDocs.length === 0) {
-        h = `<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--text-muted); font-style:italic">No linked documentation objects published.</div>`;
-    } else {
-        viewDocs.forEach((d) => {
-            h += `<div class="doc-card">
-                <div style="font-size:11px; font-weight:700; color:var(--blue); text-transform:uppercase">${d.sess} Accounting Term</div>
-                <div style="font-weight:600; font-size:14px; margin-bottom:4px; color:var(--text-main)">📄 ${d.name}</div>
-                <a href="${d.link}" target="_blank" class="btn btn-blue" style="margin-top:auto; justify-content:center; text-decoration:none; color:white; font-size:12px;">👁 Open File (G-Drive)</a>
-            </div>`;
-        });
-    }
-    document.getElementById('docGallery').innerHTML = h;
+function switchAdminTab(id, el) {
+    document.querySelectorAll('.admin-panel').forEach(d => d.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.admin-tab').forEach(d => d.classList.remove('active'));
+    el.classList.add('active');
 }
 
-function renderAdminDocs() {
-    const tbody = document.getElementById('upDocList');
-    tbody.innerHTML = '';
-    
-    if(documents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:15px; color:var(--text-muted)">No files bound inside active namespace map schema.</td></tr>`;
-        return;
-    }
-
-    documents.forEach((d, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><span class="badge">${d.sess}</span></td>
-            <td><strong>${d.name}</strong><br><small style="color:var(--text-muted); word-break:break-all;">${d.link}</small></td>
-            <td><button onclick="delDoc(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">Purge Link Trace</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-function saveDocLink() {
-    const sess = document.getElementById('upDocSess').value;
-    const name = document.getElementById('upDocName').value.trim();
-    const link = document.getElementById('upDocLink').value.trim();
-    
-    if(!name || !link) return sysAlert("Populate tracking parameter labels securely.");
-    
-    documents.push({ id: Date.now(), sess, name, link });
-    CLOUD.set('njs_docs_v16', JSON.stringify(documents));
-    
-    document.getElementById('upDocName').value = '';
-    document.getElementById('upDocLink').value = '';
-    renderAdminDocs();
-    sysAlert("Google Drive document resource payload metadata bound into tracking record array securely.");
-}
-
-function delDoc(i) {
-    sysConfirm("Delete this document link from Cloud?", () => {
-        documents.splice(i,1);
-        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
-        renderAdminDocs();
-    });
-}
-
-// --- System Admin Configuration Modules Console Actions ---
 function loadAdmin() {
-    document.getElementById('admClub').value = config.clubName;
-    document.getElementById('admPassA').value = config.adminPass;
+    document.getElementById('admClub').value = config.club;
+    document.getElementById('admPassA').value = config.passA;
     document.getElementById('admSigA').value = config.sigA;
     document.getElementById('admSigT').value = config.sigT;
     document.getElementById('admSigS').value = config.sigS;
     
-    renderAdminCatsList();
-    renderAdminUsersTable();
+    document.getElementById('lhClubName').innerText = config.club;
+    document.getElementById('lhSigAuth').innerText = config.sigA;
+
+    document.getElementById('admCatList').innerHTML = config.cats.map((c,i)=>`<span class="badge">${c} <button onclick="remCfg('cats',${i})" style="border:0; background:transparent; color:red; font-weight:bold; cursor:pointer;">×</button></span>`).join(' ');
+    renderAdminUsers();
     renderAdminDocs();
-    
-    // Seed Letterhead Builder properties dynamically
-    document.getElementById('lhDate').innerText = new Date().toLocaleDateString('en-IN');
-    document.getElementById('lhSigAuth').innerText = config.sigS || "Authorized Signatory";
-    document.getElementById('lhClubName').innerText = config.clubName;
-    document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
 }
 
-function renderAdminCatsList() {
-    const container = document.getElementById('admCatList');
-    container.innerHTML = config.cats.map((c, i) => `
-        <span class="badge">${c} <span onclick="removeCfg('cats', ${i})" style="color:var(--danger); font-weight:700; cursor:pointer; margin-left:4px;">×</span></span>
-    `).join('');
+async function saveAdminGeneral() {
+    config.club = document.getElementById('admClub').value;
+    config.passA = document.getElementById('admPassA').value;
+    config.sigA = document.getElementById('admSigA').value; 
+    config.sigT = document.getElementById('admSigT').value; 
+    config.sigS = document.getElementById('admSigS').value;
+    CLOUD.set('njs_cfg_v16', JSON.stringify(config)); 
+    await CLOUD.sync();
+    document.getElementById('dispClub').innerText = config.club;
+    sysAlert("General Configuration Synced to Cloud Successfully!"); 
 }
 
-function renderAdminUsersTable() {
-    const tbody = document.getElementById('userListBody');
-    tbody.innerHTML = config.users.map((u, i) => `
-        <tr>
-            <td><strong>${u.name}</strong></td>
-            <td><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:700;">${u.key}</code></td>
-            <td>${u.valid}</td>
-            <td>
-                <button onclick="editUser(${i})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;">✏️</button>
-                <button onclick="removeCfg('users', ${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">✕</button>
-            </td>
-        </tr>
-    `).join('');
+function backupData() {
+    const data = { config, documents, db: {} };
+    config.sessions.forEach(s => data.db[s] = JSON.parse(CLOUD.get('njs_db_'+s) || '[]'));
+    const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'NJS_Cloud_Backup.json'; a.click();
 }
 
-function addCfg(arrayKey, inputId) {
-    const el = document.getElementById(inputId);
-    const val = el.value.trim();
-    if(!val) return;
-    
-    if(arrayKey === 'cats') {
-        if(!config.cats.includes(val)) config.cats.push(val);
-        renderAdminCatsList();
+function restoreData(e) {
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+        const data = JSON.parse(ev.target.result);
+        
+        CLOUD.data['njs_cfg_v16'] = JSON.stringify(data.config);
+        CLOUD.data['njs_docs_v16'] = JSON.stringify(data.documents);
+        for(let s in data.db) CLOUD.data['njs_db_'+s] = JSON.stringify(data.db[s]);
+        
+        await CLOUD.sync();
+        sysAlert("Cloud Restore complete. Please refresh to load data.");
+    };
+    reader.readAsText(e.target.files[0]);
+}
+
+async function addCfg(k, id) { 
+    const v = document.getElementById(id).value.trim(); 
+    if(v && !config[k].includes(v)){ 
+        config[k].push(v); document.getElementById(id).value=""; 
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.sync();
+        loadAdmin(); updateDrops(); 
     }
-    el.value = '';
 }
 
-function removeCfg(arrayKey, index) {
-    sysConfirm(`Drop targeted index allocation item profile trace inside database array?`, () => {
-        config[arrayKey].splice(index, 1);
-        if(arrayKey === 'cats') renderAdminCatsList();
-        if(arrayKey === 'users') renderAdminUsersTable();
+function remCfg(k, i) { 
+    sysConfirm("Delete this configuration?", async () => {
+        config[k].splice(i,1); 
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.sync();
+        loadAdmin(); updateDrops(); 
     });
+}
+
+function renderAdminUsers() {
+    let h = '';
+    config.users.forEach((u, i) => {
+        h += `<tr>
+            <td>${u.name}</td><td><code style="background:#e2e8f0; padding:2px 6px; border-radius:4px;">${u.key}</code></td>
+            <td>${u.validTill}</td>
+            <td>
+                <button onclick="editUser(${i})" class="btn btn-warn" style="padding:4px 8px; font-size:11px;">✎</button>
+                <button onclick="delUser(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">×</button>
+            </td>
+        </tr>`;
+    });
+    document.getElementById('userListBody').innerHTML = h;
 }
 
 function openUserForm() {
     document.getElementById('userEditForm').classList.remove('hidden');
     document.getElementById('editUserIdx').value = "-1";
-    document.getElementById('uName').value = '';
+    document.getElementById('uName').value = "";
     document.getElementById('uKey').value = Math.random().toString(36).substring(2,8).toUpperCase();
     document.getElementById('uValid').value = "12/2026";
-    document.getElementById('userFormTitle').innerText = "Create New Vault Member Profile";
+    document.getElementById('userFormTitle').innerText = "Add New Member";
 }
 
 function editUser(i) {
@@ -1146,133 +1085,105 @@ function editUser(i) {
     document.getElementById('editUserIdx').value = i;
     document.getElementById('uName').value = u.name;
     document.getElementById('uKey').value = u.key;
-    document.getElementById('uValid').value = u.valid;
-    document.getElementById('userFormTitle').innerText = "Edit Authorized Security Credentials Configuration";
+    document.getElementById('uValid').value = u.validTill;
+    document.getElementById('userFormTitle').innerText = "Edit Member Profile";
 }
 
-function saveUser() {
+async function saveUser() {
     const idx = parseInt(document.getElementById('editUserIdx').value);
-    const name = document.getElementById('uName').value.trim();
-    const key = document.getElementById('uKey').value.trim().toUpperCase();
-    const valid = document.getElementById('uValid').value.trim();
+    const uName = document.getElementById('uName').value.trim();
+    if(!uName) return sysAlert("Member name is required.");
     
-    if(!name || key.length !== 6) return sysAlert("Input configurations failed context formatting validations check criteria structural constraints.");
+    const obj = {
+        name: uName,
+        key: document.getElementById('uKey').value.toUpperCase(),
+        validTill: document.getElementById('uValid').value,
+        role: 'member'
+    };
     
-    const obj = { name, key, valid };
     if(idx === -1) config.users.push(obj);
     else config.users[idx] = obj;
     
+    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+    await CLOUD.sync();
     document.getElementById('userEditForm').classList.add('hidden');
-    renderAdminUsersTable();
+    renderAdminUsers();
+    updateDrops();
 }
 
-function saveAdminGeneral() {
-    config.clubName = document.getElementById('admClub').value.trim();
-    config.adminPass = document.getElementById('admPassA').value;
-    config.sigA = document.getElementById('admSigA').value.trim();
-    config.sigT = document.getElementById('admSigT').value.trim();
-    config.sigS = document.getElementById('admSigS').value.trim();
-    
-    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-    sysAlert("Structural metadata controls successfully verified and updated across instance profiles.");
-}
-
-function saveAdminMembers() {
-    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-    sysAlert("Vault network identity permissions schemas structural states synced explicitly down database blocks.");
-}
-
-// --- Data Export API Drivers (Spreadsheets & PDF AutoTable) ---
-function exportTable(tableId, titleName) {
-    const table = document.getElementById(tableId);
-    const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-    XLSX.writeFile(wb, `${titleName}_Export_${curSess}.xlsx`);
-}
-
-function exportPDF(tableId, reportTitle) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4');
-    
-    doc.setFont("Helvetica", "bold");
-    doc.setFontSize(18);
-    doc.setTextColor(136, 19, 55);
-    doc.text(config.clubName, 40, 50);
-    
-    doc.setFontSize(11);
-    doc.setFont("Helvetica", "normal");
-    doc.setTextColor(100, 116, 139);
-    doc.text(`Financial Performance Statement Report Profile Scope: ${reportTitle} | Term Scope: ${curSess}`, 40, 70);
-    doc.text(`Generated Verification Timestamp Audit Checkpoint: ${new Date().toLocaleString()}`, 40, 85);
-    
-    doc.autoTable({
-        html: `#${tableId}`,
-        startY: 110,
-        styles: { font: 'Helvetica', fontSize: 9, cellPadding: 8 },
-        headStyles: { fillColor: [136, 19, 55], textColor: [255, 255, 255], fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        margin: { left: 40, right: 40 }
+function delUser(i) {
+    sysConfirm(`Delete member ${config.users[i].name}?`, async () => {
+        config.users.splice(i,1);
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.sync();
+        renderAdminUsers();
     });
-    
-    doc.save(`${reportTitle}_Statement_${curSess}.pdf`);
 }
 
-// --- System Backups Modules Engine ---
-function backupData() {
-    const backupObj = {
-        config: config,
-        documents: documents,
-        localActiveSessionRaw: records,
-        allCloudDumpRecordRaw: CLOUD.data
-    };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute("href", dataStr);
-    dlAnchor.setAttribute("download", `NJS_CLUB_Ledger_MasterBackup_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(dlAnchor);
-    dlAnchor.click();
-    dlAnchor.remove();
-}
+async function saveDocLink() {
+    const sess = document.getElementById('upDocSess').value;
+    const name = document.getElementById('upDocName').value.trim();
+    const link = document.getElementById('upDocLink').value.trim();
+    
+    if(!name || !link) return sysAlert("Please provide both the document name and a Google Drive link.");
 
-function restoreData(e) {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        try {
-            const parsed = JSON.parse(evt.target.result);
-            if(parsed.allCloudDumpRecordRaw) {
-                sysConfirm("Overwrite existing structural context storage records securely?", () => {
-                    CLOUD.data = parsed.allCloudDumpRecordRaw;
-                    CLOUD.sync();
-                    sysAlert("Master cloud configuration maps successfully recovered and active structural frameworks synced. Reload context.");
-                    setTimeout(() => location.reload(), 1500);
-                });
-            }
-        } catch(err) {
-            sysAlert("Standard file serialization recovery checking failure structural parameters unverified error.");
-        }
-    };
-    reader.readAsText(file);
-}
-
-// --- Frame Initialization Gateway Hooks ---
-window.onload = async () => {
-    await CLOUD.init();
-    
-    // Inject components into layout safely
-    document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
-    
-    loadInitialConfiguration();
-    
-    curSess = CLOUD.get('njs_active_sess') || config.sessions[0] || '2024-25';
-    currentUserObj = JSON.parse(CLOUD.get("njs_login_state") || "null");
-    
-    if(currentUserObj) {
-        bootstrapApplicationView();
-    } else {
-        showMemberLogin();
+    try {
+        documents.push({ id: Date.now(), sess: sess, name: name, link: link });
+        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+        await CLOUD.sync();
+        sysAlert("Google Drive document resource link bound to financial session " + sess, "Link Bound Successfully");
+        document.getElementById('upDocName').value = "";
+        document.getElementById('upDocLink').value = "";
+        renderAdminDocs();
+    } catch(err) {
+        sysAlert("Error saving link.", "Error");
     }
-};
+}
+
+function renderAdminDocs() {
+    let h = '';
+    documents.forEach((d, i) => {
+        h += `<tr><td>${d.sess}</td><td>${d.name}</td><td><button onclick="delDoc(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">🗑 Delete</button></td></tr>`;
+    });
+    document.getElementById('upDocList').innerHTML = h;
+}
+
+function delDoc(i) {
+    sysConfirm("Delete this document link from Cloud?", async () => {
+        documents.splice(i,1);
+        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+        await CLOUD.sync();
+        renderAdminDocs();
+    });
+}
+
+function renderDocGallery() {
+    const filter = document.getElementById('docViewSess').value;
+    let viewDocs = documents;
+    if(filter !== 'ALL') viewDocs = documents.filter(d => d.sess === filter);
+    
+    let h = '';
+    if(viewDocs.length === 0) {
+        h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available for the selected criteria.</div>`;
+    } else {
+        viewDocs.forEach((d) => {
+            h += `<div class="doc-card">
+                <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">📄 ${d.name}</div>
+                <button onclick="openDocument(${d.id})" class="btn btn-blue" style="margin-top: auto; justify-content: center; width:100%; font-size:12px;">👁 View PDF (G-Drive)</button>
+            </div>`;
+        });
+    }
+    document.getElementById('docGallery').innerHTML = h;
+}
+
+function openDocument(docId) {
+    const doc = documents.find(d => d.id === docId);
+    if (!doc) return sysAlert("Document record not found.");
+    if (doc.link) {
+        window.open(doc.link, "_blank");
+    }
+}
 </script>
 </body>
 </html>
