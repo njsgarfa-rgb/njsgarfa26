@@ -247,16 +247,35 @@
     </div>
 
     <div id="docSection" class="app-section hidden">
-        <div class="card">
-            <h3 style="margin-top:0; color: var(--primary);">Session Documents & Circulars</h3>
-            <p style="font-size: 13px; color: var(--text-muted);">View all uploaded PDFs grouped by financial session.</p>
-            <div style="margin-bottom: 20px;">
-                <label>Filter by Session</label>
-                <select id="docViewSess" onchange="renderDocGallery()" style="max-width: 300px;"></select>
-            </div>
-            <div id="docGallery" class="doc-grid"></div>
+    <div class="card">
+        <h3 style="margin-top:0; color: var(--primary);">Session Documents & Circulars</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">View documents hosted on Google Drive.</p>
+        <div style="margin-bottom: 20px;">
+            <label>Filter by Session</label>
+            <select id="docViewSess" onchange="renderDocGallery()" style="max-width: 300px;"></select>
         </div>
+        <div id="docGallery" class="doc-grid"></div>
     </div>
+</div>
+
+<div id="admUploads" class="admin-panel card hidden">
+    <h4 style="margin-top: 0;">Add Google Drive Document</h4>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom: 15px;">
+        <div><label>Assign to Session</label><select id="upDocSess"></select></div>
+        <div><label>Document Name</label><input id="upDocName" placeholder="e.g. Audit Report"></div>
+    </div>
+    <label>Google Drive Share Link (Ensure link access is 'Anyone with link can view')</label>
+    <input id="upDocLink" placeholder="https://drive.google.com/file/d/...">
+    <button onclick="saveDocLink()" class="btn btn-success" style="margin-top: 15px; width: 100%; padding: 12px;">SAVE TO CLOUD</button>
+
+    <h4 style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">Manage Links</h4>
+    <div class="table-container">
+        <table>
+            <thead><tr><th>Session</th><th>Name</th><th>Action</th></tr></thead>
+            <tbody id="upDocList"></tbody>
+        </table>
+    </div>
+</div>
 
     <div id="adminSection" class="app-section hidden admin-only">
         <div class="card" style="padding-bottom: 0;">
