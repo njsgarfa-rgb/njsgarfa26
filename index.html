@@ -345,7 +345,7 @@
                 <div><label>Assign to Session</label><select id="upDocSess"></select></div>
                 <div><label>Event / Document Name</label><input id="upDocName" placeholder="e.g. Durga Puja Audit Report"></div>
             </div>
-            <label>Select PDF File (Max 500KB)</label>
+            <label>Select PDF File</label>
             <input type="file" id="upDocFile" accept="application/pdf" style="padding: 10px; background: white;">
             <button onclick="uploadDoc()" class="btn btn-success" style="margin-top: 15px; width: 100%; padding: 12px;">UPLOAD & BIND DOCUMENT</button>
 
@@ -430,60 +430,96 @@ function resolveConfirm(res) {
 
 // --- Cloud Storage Adapter (JSONBin.io) ---
 const CLOUD = {
+
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
     ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
     BIN_ID: "6a2ee233da38895dfebf8333",
+
     data: {},
 
     async init() {
+
         const loader = document.createElement('div');
-        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Cloud...</div>';
+
+        loader.innerHTML =
+        '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Cloud...</div>';
+
         document.body.appendChild(loader);
 
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
-                headers: {
-                    "X-Master-Key": this.API_KEY,
-                    "X-Access-Key": this.ACCESS_KEY
+
+            const res = await fetch(
+                `https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`,
+                {
+                    headers: {
+                        "X-Master-Key": this.API_KEY,
+                        "X-Access-Key": this.ACCESS_KEY
+                    }
                 }
-            });
+            );
+
             const json = await res.json();
+
             this.data = json.record || {};
+
         } catch(e) {
+
             sysAlert("Cloud connection failed");
+
         }
+
         document.body.removeChild(loader);
+
     },
 
     get(key) {
+
         return this.data[key] || null;
+
     },
 
     set(key,val) {
+
         this.data[key] = val;
+
         this.sync();
+
     },
 
     async sync() {
+
         try {
-            await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
-                method:"PUT",
-                headers:{
-                    "Content-Type":"application/json",
-                    "X-Master-Key":this.API_KEY,
-                    "X-Access-Key":this.ACCESS_KEY
-                },
-                body:JSON.stringify(this.data)
-            });
+
+            await fetch(
+
+                `https://api.jsonbin.io/v3/b/${this.BIN_ID}`,
+
+                {
+                    method:"PUT",
+
+                    headers:{
+                        "Content-Type":"application/json",
+                        "X-Master-Key":this.API_KEY,
+                        "X-Access-Key":this.ACCESS_KEY
+                    },
+
+                    body:JSON.stringify(this.data)
+                }
+
+            );
+
         } catch(e) {
+
             console.error(e);
+
         }
+
     }
+
 };
-
 // --- Data Models & State ---
+// Migrated from global scope to be initialized after Cloud connects
 let curSess, config, records, documents, currentUserObj;
-
 // Pure Code Equivalent of the Club Banner
 const staticBannerHTML = `
 <div style="display: flex; align-items: stretch; max-width: 800px; margin: 0 auto 20px auto; color: #a31621; font-family: Arial, sans-serif; background: white; overflow: hidden; padding: 10px;">
@@ -530,15 +566,20 @@ function fmtDate(dStr) {
 
 // --- Initialization & Auth Flow ---
 window.onload = async () => {
+    // 1. Connect to Cloud First
     await CLOUD.init();
-    currentUserObj = JSON.parse(CLOUD.get("njs_login_state") || "null");
-    
+currentUserObj =
+JSON.parse(
+    CLOUD.get("njs_login_state") || "null"
+);
+    // 2. Load Core Data from Cloud
     curSess = CLOUD.get('njs_active_sess') || '2024-25';
     let rawCfg = CLOUD.get('njs_cfg_v16');
     
     if (rawCfg) {
         config = JSON.parse(rawCfg);
     } else {
+        // Push default configuration to cloud if brand new
         config = {
             club: 'Garfa Nobojyoti Sangha',
             cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
@@ -580,6 +621,7 @@ window.onload = async () => {
     documents = JSON.parse(CLOUD.get('njs_docs_v16') || "[]");
     currentUserObj = null;
 
+    // 3. Render UI Elements
     document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
     document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
 
@@ -654,9 +696,15 @@ function finalizeLogin() {
 
 // --- Navigation & Core Views ---
 function showAppSection(id) {
-    document.querySelectorAll('.app-section').forEach(d => d.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
-    document.querySelectorAll('.nav-item').forEach(d => d.classList.remove('active'));
+
+    document.querySelectorAll('.app-section')
+        .forEach(d => d.classList.add('hidden'));
+
+    document.getElementById(id)
+        .classList.remove('hidden');
+
+    document.querySelectorAll('.nav-item')
+        .forEach(d => d.classList.remove('active'));
 
     const navMap = {
         dashboard:'navJournal',
@@ -667,7 +715,9 @@ function showAppSection(id) {
         adminSection:'navAdmin'
     };
 
-    if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
+    if(navMap[id])
+        document.getElementById(navMap[id]).classList.add('active');
+
 }
 
 function switchSession(v) { 
@@ -898,7 +948,6 @@ function saveAdminGeneral() {
     sysAlert("General Configuration Synced to Cloud Successfully!"); 
 }
 
-// --- Data Protection: Import/Export ---
 function backupData() {
     const data = { config, documents, db: {} };
     config.sessions.forEach(s => data.db[s] = JSON.parse(CLOUD.get('njs_db_'+s) || '[]'));
@@ -1001,7 +1050,6 @@ function delUser(i) {
     });
 }
 
-// --- Dynamic Cross-Device Document Pipeline ---
 function uploadDoc() {
     const sess = document.getElementById('upDocSess').value;
     const name = document.getElementById('upDocName').value.trim();
@@ -1010,8 +1058,7 @@ function uploadDoc() {
     if(!name || !fileInp.files.length) return sysAlert("Please provide document name and select a PDF file.");
     
     const file = fileInp.files[0];
-    // Rigid 500KB ceiling to prevent stream fragmentation on mobile devices
-    if(file.size > 500 * 1024) return sysAlert("File is too large. Maximum permitted size is 500KB.");
+    if(file.size > 2 * 1024 * 1024) return sysAlert("File is too large. Cloud limit is 2MB per file.");
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1023,7 +1070,7 @@ function uploadDoc() {
             fileInp.value = "";
             renderAdminDocs();
         } catch(err) {
-            sysAlert("Storage Limit Reached. Cannot save file.", "Error");
+            sysAlert("Storage Limit Reached. Cannot save large file.", "Error");
         }
     };
     reader.readAsDataURL(file);
@@ -1054,65 +1101,17 @@ function renderDocGallery() {
     if(viewDocs.length === 0) {
         h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available for the selected criteria.</div>`;
     } else {
-        viewDocs.forEach((d) => {
+        viewDocs.forEach(d => {
             h += `<div class="doc-card">
                 <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
                 <div style="font-weight: 600;">${d.name}</div>
-                <button onclick="viewPDFInline(${d.id})" class="btn btn-ghost" style="margin-top: auto; justify-content: center;">👁 View Document</button>
+                <a href="${d.dataUrl}" download="${d.name.replace(/\s+/g,'_')}.pdf" target="_blank" class="btn btn-ghost" style="text-decoration:none; margin-top: auto;">👁 View / Download</a>
             </div>`;
         });
     }
     document.getElementById('docGallery').innerHTML = h;
 }
 
-function viewPDFInline(docId) {
-    const doc = documents.find(d => d.id === docId);
-    if (!doc || !doc.dataUrl) return sysAlert("Document data could not be found.");
-
-    try {
-        // Safe conversion of Base64 to binary byte stream array
-        const parts = doc.dataUrl.split(';base64,');
-        const contentType = parts[0].split(':')[1];
-        const raw = window.atob(parts[1]);
-        const rawLength = raw.length;
-        const uInt8Array = new Uint8Array(new ArrayBuffer(rawLength));
-
-        for (let i = 0; i < rawLength; ++i) {
-            uInt8Array[i] = raw.charCodeAt(i);
-        }
-
-        const blob = new Blob([uInt8Array], { type: 'application/pdf' });
-        const blobUrl = URL.createObjectURL(blob);
-
-        // Launches an unblocked viewport wrapper target container
-        const viewerWin = window.open("", "_blank");
-        if (viewerWin) {
-            viewerWin.document.write(`
-                <html>
-                <head>
-                    <title>${doc.name}</title>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <style>
-                        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #525659; }
-                        iframe { width: 100%; height: 100%; border: none; }
-                    </style>
-                </head>
-                <body>
-                    <iframe src="${blobUrl}"></iframe>
-                </body>
-                </html>
-            `);
-            viewerWin.document.close();
-        } else {
-            sysAlert("Pop-up blocked! Please allow pop-ups to view this document inline.");
-        }
-    } catch (err) {
-        console.error(err);
-        sysAlert("Could not render the PDF window on this device.");
-    }
-}
-
-// --- Excel Integrations ---
 function importExcel(e) {
     const file = e.target.files[0];
     if(!file) return;
@@ -1140,7 +1139,7 @@ function importExcel(e) {
                 let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
                 if(parsedCat && !config.cats.includes(parsedCat)) {
                     config.cats.push(parsedCat);
-                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config);
+                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config); // Save silently to avoid multiple calls
                 }
 
                 const cleanAmt = (val) => {
