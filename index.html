@@ -468,8 +468,10 @@ const CLOUD = {
     },
 
     async sync() {
-        try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
+    try {
+        const res = await fetch(
+            `https://api.jsonbin.io/v3/b/${this.BIN_ID}`,
+            {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -480,10 +482,13 @@ const CLOUD = {
             }
         );
 
+        const txt = await res.text();
+
+        console.log("Status:", res.status);
+        console.log("Response:", txt);
+
         if (!res.ok) {
-            const txt = await res.text();
-            console.error(txt);
-            sysAlert(txt);
+            sysAlert("Cloud save failed!");
             return false;
         }
 
@@ -491,7 +496,6 @@ const CLOUD = {
 
     } catch (e) {
         console.error(e);
-        sysAlert("Cloud sync failed");
         return false;
     }
 };
