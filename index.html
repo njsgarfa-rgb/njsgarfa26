@@ -12,7 +12,6 @@
     
     <style>
         :root {
-            /* Using deep reds to match the provided logo/banner */
             --primary: #881337; --accent: #be123c; --bg: #f8fafc; --card: #ffffff;
             --text-main: #1e293b; --text-muted: #64748b; --danger: #ef4444;
             --blue: #0284c7; --border: #e2e8f0; --warn: #f59e0b; --success: #10b981;
@@ -32,7 +31,6 @@
 
         .banner-img { width: 100%; max-width: 800px; display: block; margin: 0 auto 20px auto; border-radius: 8px; }
 
-        /* Dashboard Tools Area */
         .control-bar { display: flex; flex-wrap: wrap; gap: 10px; background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px; align-items: center; border: 1px solid var(--border); }
         .tool-group { display: flex; align-items: center; gap: 8px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
 
@@ -65,26 +63,22 @@
         input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.1); }
         label { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Custom Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px); }
         .modal-box { background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .modal-title { font-size: 18px; font-weight: 700; margin-top: 0; color: var(--primary); }
         .modal-msg { font-size: 15px; color: var(--text-main); margin: 15px 0 25px 0; line-height: 1.5; }
         .modal-actions { display: flex; gap: 10px; justify-content: center; }
 
-        /* Admin Sub Tabs */
         .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
         .admin-tab { padding: 10px 15px; background: #f1f5f9; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; border: 1px solid var(--border); }
         .admin-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Letterhead Builder */
         .letterhead-preview { background: white; padding: 40px; border: 1px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 600px; position: relative; }
         .lh-header { display: flex; justify-content: space-between; margin-top: 20px; font-weight: 600; font-size: 14px; }
         .lh-content { min-height: 300px; margin-top: 40px; outline: none; border: 1px dashed transparent; padding: 10px; transition: 0.2s; }
         .lh-content:focus { border-color: var(--blue); background: #f8fafc; }
         .lh-footer { text-align: right; margin-top: 60px; font-weight: 600; }
 
-        /* Document Grid */
         .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
         .doc-card { padding: 15px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
 
@@ -158,7 +152,7 @@
         <div id="dispClub" style="font-weight:800; font-size: 1.2rem; letter-spacing: -0.5px;"></div>
         <div id="dispUser" style="font-size:11px; opacity: 0.9; margin-top: 2px;"></div>
     </div>
-    <button onclick="CLOUD.set('njs_login_state', null); location.reload()" class="btn btn-ghost" style="padding: 6px 12px; color: var(--primary); border: none;">LOGOUT</button>
+    <button onclick="CLOUD.set('njs_login_state', null).then(() => location.reload())" class="btn btn-ghost" style="padding: 6px 12px; color: var(--primary); border: none;">LOGOUT</button>
 </header>
 
 <div class="container hidden" id="appContainer">
@@ -260,7 +254,7 @@
 
     <div id="adminSection" class="app-section hidden admin-only">
         <div class="card" style="padding-bottom: 0;">
-	    <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
+            <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
             <div class="admin-tabs">
                 <div class="admin-tab active" onclick="switchAdminTab('admGeneral', this)">General Settings</div>
                 <div class="admin-tab" onclick="switchAdminTab('admUsers', this)">Password & Members</div>
@@ -428,7 +422,7 @@ function resolveConfirm(res) {
     confirmCallback = null;
 }
 
-// --- Cloud Storage Adapter (JSONBin.io) ---
+// --- Cloud Storage Adapter (JSONBin.io) with Anti-Cache Bypass ---
 const CLOUD = {
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
     ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
@@ -437,11 +431,12 @@ const CLOUD = {
 
     async init() {
         const loader = document.createElement('div');
-        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Cloud...</div>';
+        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Live Cloud Hub...</div>';
         document.body.appendChild(loader);
 
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
+            // FIX: Append Timestamp hash to bypass edge CDN caching issues on secondary devices completely
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest?_=${Date.now()}`, {
                 headers: {
                     "X-Master-Key": this.API_KEY,
                     "X-Access-Key": this.ACCESS_KEY
@@ -450,7 +445,7 @@ const CLOUD = {
             const json = await res.json();
             this.data = json.record || {};
         } catch(e) {
-            sysAlert("Cloud connection failed");
+            sysAlert("Cloud initialization failed. Working from local cached variables.");
         }
         document.body.removeChild(loader);
     },
@@ -459,9 +454,9 @@ const CLOUD = {
         return this.data[key] || null;
     },
 
-    set(key, val) {
+    async set(key, val) {
         this.data[key] = val;
-        return this.sync();
+        await this.sync();
     },
 
     async sync() {
@@ -476,7 +471,7 @@ const CLOUD = {
                 body: JSON.stringify(this.data)
             });
         } catch(e) {
-            console.error("Cloud synchronization failed:", e);
+            console.error("Cloud synchronization mismatch error:", e);
         }
     }
 };
@@ -674,9 +669,9 @@ function showAppSection(id) {
     if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
 }
 
-function switchSession(v) { 
+async function switchSession(v) { 
     curSess = v; 
-    CLOUD.set('njs_active_sess', v); 
+    await CLOUD.set('njs_active_sess', v); 
     
     loadRecordsForSession();
     updateDrops();
@@ -687,15 +682,15 @@ function switchSession(v) {
     if(!document.getElementById('docSection').classList.contains('hidden')) renderDocGallery();
 }
 
-function promptNewSession() {
+async function promptNewSession() {
     const s = prompt("Enter Name for the new Session (e.g. 2026-27 or Annual Event):");
     if(s && s.trim() !== '') {
         const clean = s.trim();
         if(!config.sessions.includes(clean)) {
             config.sessions.push(clean);
-            CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+            await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
         }
-        switchSession(clean);
+        await switchSession(clean);
     }
 }
 
@@ -753,7 +748,7 @@ function genAI() {
     document.getElementById('tBeing').value = `Being the amount ${action} ${m} on account of ${c} vide ${doc} No. ${v} amounting to Rs. ${a}/-.`;
 }
 
-function saveTxn() {
+async function saveTxn() {
     const idx = parseInt(document.getElementById('editIdx').value);
     const data = {
         date: document.getElementById('tDate').value, vou: document.getElementById('tVou').value, cat: document.getElementById('tCat').value, mem: document.getElementById('tMem').value,
@@ -762,7 +757,10 @@ function saveTxn() {
         being: document.getElementById('tBeing').value
     };
     if(idx === -1) records.push(data); else records[idx] = data;
-    refresh(); showAppSection('dashboard');
+    
+    refresh(); 
+    await CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
+    showAppSection('dashboard');
 }
 
 function editRec(i) {
@@ -773,8 +771,22 @@ function editRec(i) {
     document.getElementById('tBeing').value = r.being;
 }
 
-function delRec(i) { sysConfirm("Permanently delete this journal entry?", () => { records.splice(i,1); refresh(); }); }
-function wipeData() { sysConfirm("DANGER: Wipe entire database for this session?", () => { records = []; refresh(); }); }
+function delRec(i) { 
+    sysConfirm("Permanently delete this journal entry?", async () => { 
+        records.splice(i,1); 
+        refresh(); 
+        await CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
+    }); 
+}
+
+function wipeData() { 
+    sysConfirm("DANGER: Wipe entire database for this session?", async () => { 
+        records = []; 
+        refresh(); 
+        await CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
+    }); 
+}
+
 function resetForm() { document.getElementById('editIdx').value = "-1"; document.getElementById('tDate').value = new Date().toISOString().split('T')[0]; document.getElementById('tAmt').value = ""; genAI(); }
 
 function updateDrops() {
@@ -891,13 +903,14 @@ function loadAdmin() {
     renderAdminDocs();
 }
 
-function saveAdminGeneral() {
+async function saveAdminGeneral() {
     config.club = document.getElementById('admClub').value;
     config.passA = document.getElementById('admPassA').value;
     config.sigA = document.getElementById('admSigA').value; 
     config.sigT = document.getElementById('admSigT').value; 
     config.sigS = document.getElementById('admSigS').value;
-    CLOUD.set('njs_cfg_v16', JSON.stringify(config)); 
+    
+    await CLOUD.set('njs_cfg_v16', JSON.stringify(config)); 
     document.getElementById('dispClub').innerText = config.club;
     sysAlert("General Configuration Synced to Cloud Successfully!"); 
 }
@@ -925,23 +938,24 @@ function restoreData(e) {
     reader.readAsText(e.target.files[0]);
 }
 
-function addCfg(k, id) { 
+async function addCfg(k, id) { 
     const v = document.getElementById(id).value.trim(); 
     if(v && !config[k].includes(v)){ 
         config[k].push(v); document.getElementById(id).value=""; 
         loadAdmin(); updateDrops(); 
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
     }
 }
+
 function remCfg(k, i) { 
-    sysConfirm("Delete this configuration?", () => {
+    sysConfirm("Delete this configuration?", async () => {
         config[k].splice(i,1); 
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
         loadAdmin(); updateDrops(); 
     });
 }
 
-// --- User Management Control panel ---
+// --- User Management Control Panel ---
 function renderAdminUsers() {
     let h = '';
     config.users.forEach((u, i) => {
@@ -976,7 +990,7 @@ function editUser(i) {
     document.getElementById('userFormTitle').innerText = "Edit Member Profile";
 }
 
-function saveUser() {
+async function saveUser() {
     const idx = parseInt(document.getElementById('editUserIdx').value);
     const uName = document.getElementById('uName').value.trim();
     if(!uName) return sysAlert("Member name is required.");
@@ -991,21 +1005,21 @@ function saveUser() {
     if(idx === -1) config.users.push(obj);
     else config.users[idx] = obj;
     
-    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+    await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
     document.getElementById('userEditForm').classList.add('hidden');
     renderAdminUsers();
     updateDrops();
 }
 
 function delUser(i) {
-    sysConfirm(`Delete member ${config.users[i].name}?`, () => {
+    sysConfirm(`Delete member ${config.users[i].name}?`, async () => {
         config.users.splice(i,1);
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
         renderAdminUsers();
     });
 }
 
-// --- Document Management Sync ---
+// --- Document Management Control ---
 function uploadDoc() {
     const sess = document.getElementById('upDocSess').value;
     const name = document.getElementById('upDocName').value.trim();
@@ -1028,7 +1042,7 @@ function uploadDoc() {
             fileInp.value = "";
             renderAdminDocs();
         } catch(err) {
-            sysAlert("Cloud Rejected the payload size. Try a smaller optimized PDF file.", "Storage Error");
+            sysAlert("Cloud Storage limit exceeded or network rejected the data size.", "Storage Error");
         }
     };
     reader.readAsDataURL(file);
@@ -1043,9 +1057,9 @@ function renderAdminDocs() {
 }
 
 function delDoc(i) {
-    sysConfirm("Delete this document from Cloud?", () => {
+    sysConfirm("Delete this document from Cloud?", async () => {
         documents.splice(i,1);
-        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+        await CLOUD.set('njs_docs_v16', JSON.stringify(documents));
         renderAdminDocs();
     });
 }
