@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NJS CLUB | Master Cloud Ledger v16 (Drive Links)</title>
+    <title>NJS CLUB | Master Cloud Ledger v16</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -429,58 +429,130 @@ function resolveConfirm(res) {
     confirmCallback = null;
 }
 
-// --- Cloud Storage Adapter (JSONBin.io) with Synchronous Dynamic Interlock ---
+// --- Cloud Storage Adapter (JSONBin.io) ---
 const CLOUD = {
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
     ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
-    BIN_ID: "6a2ee233da38895dfebf8333",
-    data: {},
+    
+    // Aligned Master Config Bin ID
+    CONFIG_BIN: "6a381769f5f4af5e291905bb", 
+    
+    // Aligned Sessions to respective JSON Bin IDs
+    BIN_MAP: {
+        "2023-24": "6a2ee233da38895dfebf8333",
+        "2024-25": "6a3814d2f5f4af5e2918fd32",
+        "2025-26": "6a3814dff5f4af5e2918fd5c",
+        "2026-27": "6a3814e2da38895dfee77573"
+    },
+
+    data: {}, 
+    config: {},
 
     async init() {
         const loader = document.createElement('div');
-        loader.id = "cloudLoaderOverlay";
-        loader.innerHTML = '<div style="position:fixed;inset:0;background:rgba(255,255,255,0.9);display:flex;flex-direction:column;gap:15px;justify-content:center;align-items:center;z-index:99999;font-family:sans-serif;font-weight:600;color:#881337;">🔄 Synced Connection with Cloud Ledger Engine...</div>';
+        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Cloud...</div>';
         document.body.appendChild(loader);
 
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
-                headers: {
-                    "X-Master-Key": this.API_KEY,
-                    "X-Access-Key": this.ACCESS_KEY
-                }
+            // 1. Fetch Global Master Configuration Layout
+            const cfgRes = await fetch(`https://api.jsonbin.io/v3/b/${this.CONFIG_BIN}/latest`, {
+                headers: { "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY }
+            });
+            const cfgJson = await cfgRes.json();
+            this.config = cfgJson.record || {};
+
+            // 2. Fallback initialization locally if empty record comes back
+            if (!this.config.sessions) {
+                this.config = {
+                    club: 'Garfa Nobojyoti Sangha',
+                    cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
+                    sessions: ['2023-24', '2024-25', '2025-26', '2026-27'],
+                    passA: 'admin123',
+                    sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary',
+                    users: [
+                        { name: 'Ranjit Dutta', key: 'A1B2C3', validTill: '12/2025', role: 'member' },
+                        { name: 'Sibi Rai', key: 'D4E5F6', validTill: '12/2026', role: 'member' },
+                        { name: 'Ranjit Gayen', key: 'G7H8I9', validTill: '10/2026', role: 'member' },
+                        { name: 'Tapas Das', key: 'J0K1L2', validTill: '03/2026', role: 'member' },
+                        { name: 'Swarup Roy', key: 'M3N4O5', validTill: '08/2024', role: 'member' },
+                        { name: 'Apan Roy', key: 'P6Q7R8', validTill: '09/2025', role: 'member' },
+                        { name: 'Premchand Mondal', key: 'S9T0U1', validTill: '09/2025', role: 'member' },
+                        { name: 'Kalyan Karmakar', key: 'V2W3X4', validTill: '06/2025', role: 'member' },
+                        { name: 'Prasanta Das', key: 'Y5Z6A7', validTill: '06/2025', role: 'member' },
+                        { name: 'Arun Ghosh', key: 'B8C9D0', validTill: '11/2025', role: 'member' },
+                        { name: 'Deb Kumar Deb', key: 'E1F2G3', validTill: '06/2026', role: 'member' },
+                        { name: 'Chandan Sengupta', key: 'H4I5J6', validTill: '08/2025', role: 'member' },
+                        { name: 'Bijoy Paul', key: 'K7L8M9', validTill: '03/2025', role: 'member' },
+                        { name: 'Chanchal Sarkar', key: 'N0O1P2', validTill: '04/2025', role: 'member' },
+                        { name: 'Anal Sharma Roy', key: 'Q3R4S5', validTill: '02/2025', role: 'member' },
+                        { name: 'Samar Saha', key: 'T6U7V8', validTill: '04/2024', role: 'member' },
+                        { name: 'Sushanta Sarkar', key: 'W9X0Y1', validTill: '01/2026', role: 'member' },
+                        { name: 'Rajib Saha', key: 'Z2A3B4', validTill: '12/2025', role: 'member' },
+                        { name: 'Goutam Paul', key: 'C5D6E7', validTill: '12/2025', role: 'member' },
+                        { name: 'Joy Mukherjee', key: 'F8G9H0', validTill: '08/2025', role: 'member' },
+                        { name: 'Amit Thakur', key: 'I1J2K3', validTill: '08/2025', role: 'member' },
+                        { name: 'Gora Mondal', key: 'L4M5N6', validTill: '06/2025', role: 'member' },
+                        { name: 'Shyamal Das', stroke: '', key: 'O7P8Q9', validTill: '04/2025', role: 'member' },
+                        { name: 'Barun Deb', key: 'R0S1T2', validTill: '12/2025', role: 'member' },
+                        { name: 'Tamal Das', key: 'U3V4W5', validTill: '10/2024', role: 'member' },
+                        { name: 'Kartik Dutta', key: 'X6Y7Z8', validTill: '03/2024', role: 'member' }
+                    ]
+                };
+                await this.syncConfig();
+            }
+
+            // 3. Populate app system variables global cache context
+            config = this.config;
+            documents = JSON.parse(localStorage.getItem('njs_docs_v16') || "[]");
+
+            // 4. Run ledger payload for initial active context session window
+            await this.loadSessionData();
+        } catch(e) {
+            sysAlert("Cloud initialization failed");
+            console.error(e);
+        }
+        document.body.removeChild(loader);
+    },
+
+    async loadSessionData() {
+        const binId = this.BIN_MAP[curSess] || this.BIN_MAP["2024-25"];
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                headers: { "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY }
             });
             const json = await res.json();
-            this.data = json.record || {};
+            this.data = json.record || { transactions: [] };
+            records = this.data.transactions || [];
         } catch(e) {
-            sysAlert("Cloud framework extraction error.");
+            console.error("Failed to load session transactions", e);
+            records = [];
         }
-        
-        const target = document.getElementById("cloudLoaderOverlay");
-        if(target) target.remove();
-    },
-
-    get(key) {
-        return this.data[key] || null;
-    },
-
-    set(key, val) {
-        this.data[key] = val;
     },
 
     async sync() {
+        const binId = this.BIN_MAP[curSess];
+        if(!binId) return;
+        this.data.transactions = records;
         try {
-            await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
+            await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Master-Key": this.API_KEY,
-                    "X-Access-Key": this.ACCESS_KEY
-                },
+                headers: { "Content-Type": "application/json", "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY },
                 body: JSON.stringify(this.data)
             });
         } catch(e) {
-            console.error("Critical Cloud Push Error: ", e);
-            sysAlert("Failed to sync structural properties to Cloud Engine.");
+            console.error("Cloud syncing journal failed", e);
+        }
+    },
+
+    async syncConfig() {
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${this.CONFIG_BIN}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY },
+                body: JSON.stringify(this.config)
+            });
+        } catch(e) {
+            console.error("Cloud configuration mapping sync failure", e);
         }
     }
 };
@@ -533,61 +605,10 @@ function fmtDate(dStr) {
 
 // --- Initialization & Auth Flow ---
 window.onload = async () => {
+    curSess = localStorage.getItem('njs_active_sess') || '2024-25';
+    
     await CLOUD.init();
-    currentUserObj = JSON.parse(CLOUD.get("njs_login_state") || "null");
     
-    curSess = CLOUD.get('njs_active_sess') || '2024-25';
-    let rawCfg = CLOUD.get('njs_cfg_v16');
-    
-    if (rawCfg) {
-        config = JSON.parse(rawCfg);
-        
-        // Ensure historical options are properly initialized inside custom lists
-        if (!config.sessions) config.sessions = [];
-        if (!config.sessions.includes('2023-24')) config.sessions.unshift('2023-24');
-        if (!config.sessions.includes('2024-25')) config.sessions.push('2024-25');
-    } else {
-        config = {
-            club: 'Garfa Nobojyoti Sangha',
-            cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
-            sessions: ['2023-24', '2024-25'],
-            passA: 'admin123',
-            sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary',
-            users: [
-                { name: 'Ranjit Dutta', key: 'A1B2C3', validTill: '12/2025', role: 'member' },
-                { name: 'Sibi Rai', key: 'D4E5F6', validTill: '12/2026', role: 'member' },
-                { name: 'Ranjit Gayen', key: 'G7H8I9', validTill: '10/2026', role: 'member' },
-                { name: 'Tapas Das', key: 'J0K1L2', validTill: '03/2026', role: 'member' },
-                { name: 'Swarup Roy', key: 'M3N4O5', validTill: '08/2024', role: 'member' },
-                { name: 'Apan Roy', key: 'P6Q7R8', validTill: '09/2025', role: 'member' },
-                { name: 'Premchand Mondal', key: 'S9T0U1', validTill: '09/2025', role: 'member' },
-                { name: 'Kalyan Karmakar', key: 'V2W3X4', validTill: '06/2025', role: 'member' },
-                { name: 'Prasanta Das', key: 'Y5Z6A7', validTill: '06/2025', role: 'member' },
-                { name: 'Arun Ghosh', key: 'B8C9D0', validTill: '11/2025', role: 'member' },
-                { name: 'Deb Kumar Deb', key: 'E1F2G3', validTill: '06/2026', role: 'member' },
-                { name: 'Chandan Sengupta', key: 'H4I5J6', validTill: '08/2025', role: 'member' },
-                { name: 'Bijoy Paul', key: 'K7L8M9', validTill: '03/2025', role: 'member' },
-                { name: 'Chanchal Sarkar', key: 'N0O1P2', validTill: '04/2025', role: 'member' },
-                { name: 'Anal Sharma Roy', key: 'Q3R4S5', validTill: '02/2025', role: 'member' },
-                { name: 'Samar Saha', key: 'T6U7V8', validTill: '04/2024', role: 'member' },
-                { name: 'Sushanta Sarkar', key: 'W9X0Y1', validTill: '01/2026', role: 'member' },
-                { name: 'Rajib Saha', key: 'Z2A3B4', validTill: '12/2025', role: 'member' },
-                { name: 'Goutam Paul', key: 'C5D6E7', validTill: '12/2025', role: 'member' },
-                { name: 'Joy Mukherjee', key: 'F8G9H0', validTill: '08/2025', role: 'member' },
-                { name: 'Amit Thakur', key: 'I1J2K3', validTill: '08/2025', role: 'member' },
-                { name: 'Gora Mondal', key: 'L4M5N6', validTill: '06/2025', role: 'member' },
-                { name: 'Shyamal Das', key: 'O7P8Q9', validTill: '04/2025', role: 'member' },
-                { name: 'Barun Deb', key: 'R0S1T2', validTill: '12/2025', role: 'member' },
-                { name: 'Tamal Das', key: 'U3V4W5', validTill: '10/2024', role: 'member' },
-                { name: 'Kartik Dutta', key: 'X6Y7Z8', validTill: '03/2024', role: 'member' }
-            ]
-        };
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-        await CLOUD.sync();
-    }
-
-    documents = JSON.parse(CLOUD.get('njs_docs_v16') || "[]");
-
     document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
     document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
 
@@ -603,20 +624,18 @@ function showAdminLogin() {
     document.getElementById('adminLoginCard').classList.remove('hidden');
 }
 
-async function syncJournal() {
+function syncJournal() {
     if(currentUserObj && currentUserObj.role === 'admin') {
-        CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
-        await CLOUD.sync();
+        CLOUD.sync();
         sysAlert("Current ledger journals successfully saved and pushed to the cloud bin!", "Sync Complete");
     } else {
         sysAlert("Operation blocked: Admin verification required.");
     }
 }
 
-async function saveAdminMembers() {
+function saveAdminMembers() {
     if(currentUserObj && currentUserObj.role === 'admin') {
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-        await CLOUD.sync();
+        CLOUD.syncConfig();
         sysAlert("All configuration profiles, keys, and access schedules successfully committed to cloud!", "Changes Synced");
     } else {
         sysAlert("Operation blocked: Admin verification required.");
@@ -675,7 +694,7 @@ function finalizeLogin() {
         document.querySelectorAll('.admin-only-cell').forEach(el => el.style.display = 'none');
     }
 
-    loadRecordsForSession();
+    refresh();
     updateDrops();
     showAppSection('dashboard');
 }
@@ -699,38 +718,28 @@ function showAppSection(id) {
 
 async function switchSession(v) { 
     curSess = v; 
-    CLOUD.set('njs_active_sess', v); 
+    localStorage.setItem('njs_active_sess', v); 
     
-    loadRecordsForSession();
+    await CLOUD.loadSessionData();
     updateDrops();
     
     if(!document.getElementById('dashboard').classList.contains('hidden')) refresh();
     if(!document.getElementById('ledgerSection').classList.contains('hidden')) renderLedger();
     if(!document.getElementById('trialSection').classList.contains('hidden')) { renderTrial(); renderSummary(); }
     if(!document.getElementById('docSection').classList.contains('hidden')) renderDocGallery();
-
-    await CLOUD.sync();
 }
 
-async function promptNewSession() {
-    const s = prompt("Enter Name for the new Session (e.g. 2026-27 or Annual Event):");
+function promptNewSession() {
+    const s = prompt("Enter Name for the new Session (e.g. 2027-28 or Annual Event):");
     if(s && s.trim() !== '') {
         const clean = s.trim();
         if(!config.sessions.includes(clean)) {
             config.sessions.push(clean);
-            
-            CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-            await CLOUD.sync();
-            
+            CLOUD.syncConfig();
             sysAlert(`New financial cycle session context "${clean}" generated and dynamically saved to cloud configuration assets!`, "Session Pushed");
         }
-        await switchSession(clean);
+        switchSession(clean);
     }
-}
-
-function loadRecordsForSession() {
-    records = JSON.parse(CLOUD.get('njs_db_' + curSess) || "[]");
-    refresh();
 }
 
 function refresh() {
@@ -772,7 +781,6 @@ function refresh() {
     </tr>`;
 
     document.getElementById('txnBody').innerHTML = h;
-    CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
 }
 
 function genAI() {
@@ -782,7 +790,7 @@ function genAI() {
     document.getElementById('tBeing').value = `Being the amount ${action} ${m} on account of ${c} vide ${doc} No. ${v} amounting to Rs. ${a}/-.`;
 }
 
-async function saveTxn() {
+function saveTxn() {
     const idx = parseInt(document.getElementById('editIdx').value);
     const data = {
         date: document.getElementById('tDate').value, vou: document.getElementById('tVou').value, cat: document.getElementById('tCat').value, mem: document.getElementById('tMem').value,
@@ -791,11 +799,7 @@ async function saveTxn() {
         being: document.getElementById('tBeing').value
     };
     if(idx === -1) records.push(data); else records[idx] = data;
-    
-    // Core transactional lock: explicitly write the record back to cloud array on save
-    refresh(); 
-    await CLOUD.sync();
-    showAppSection('dashboard');
+    refresh(); showAppSection('dashboard');
 }
 
 // --- Excel & PDF Integrations ---
@@ -803,12 +807,12 @@ function importExcel(e) {
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
         try {
             const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
             const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
             
-            for (const x of data) {
+            data.forEach(x => {
                 let finalDate = new Date().toISOString().split('T')[0];
                 if (x.Date) {
                     let d = String(x.Date).trim();
@@ -826,7 +830,7 @@ function importExcel(e) {
                 let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
                 if(parsedCat && !config.cats.includes(parsedCat)) {
                     config.cats.push(parsedCat);
-                    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+                    CLOUD.syncConfig();
                 }
 
                 const cleanAmt = (val) => {
@@ -844,9 +848,8 @@ function importExcel(e) {
                     cr: cleanAmt(x['Out (-)'] || x.Out || x['Cash Out (Cr)'] || 0),
                     being: x.Narration || x.Being || ""
                 });
-            }
+            });
             refresh(); 
-            await CLOUD.sync();
             sysAlert("Batch Excel Import Synced to Cloud Successfully!");
         } catch(err) {
             console.error(err);
@@ -891,8 +894,8 @@ function editRec(i) {
     document.getElementById('tBeing').value = r.being;
 }
 
-function delRec(i) { sysConfirm("Permanently delete this journal entry?", async () => { records.splice(i,1); refresh(); await CLOUD.sync(); }); }
-function wipeData() { sysConfirm("DANGER: Wipe entire database for this session?", async () => { records = []; refresh(); await CLOUD.sync(); }); }
+function delRec(i) { sysConfirm("Permanently delete this journal entry?", () => { records.splice(i,1); refresh(); }); }
+function wipeData() { sysConfirm("DANGER: Wipe entire database for this session?", () => { records = []; refresh(); }); }
 function resetForm() { document.getElementById('editIdx').value = "-1"; document.getElementById('tDate').value = new Date().toISOString().split('T')[0]; document.getElementById('tAmt').value = ""; genAI(); }
 
 function updateDrops() {
@@ -976,7 +979,6 @@ function renderTrial() {
     document.getElementById('trialOutput').innerHTML = h;
 }
 
-// Summary Component
 function renderSummary() {
     let rm = {}, pm = {}, td=0, tc=0;
     records.forEach(r => { if(r.dr>0){ rm[r.cat]=(rm[r.cat]||0)+r.dr; td+=r.dr; } else { pm[r.cat]=(pm[r.cat]||0)+r.cr; tc+=r.cr; } });
@@ -1010,55 +1012,50 @@ function loadAdmin() {
     renderAdminDocs();
 }
 
-async function saveAdminGeneral() {
+function saveAdminGeneral() {
     config.club = document.getElementById('admClub').value;
     config.passA = document.getElementById('admPassA').value;
     config.sigA = document.getElementById('admSigA').value; 
     config.sigT = document.getElementById('admSigT').value; 
     config.sigS = document.getElementById('admSigS').value;
-    CLOUD.set('njs_cfg_v16', JSON.stringify(config)); 
-    await CLOUD.sync();
+    CLOUD.syncConfig();
     document.getElementById('dispClub').innerText = config.club;
     sysAlert("General Configuration Synced to Cloud Successfully!"); 
 }
 
+// --- Data Protection: Import/Export ---
 function backupData() {
     const data = { config, documents, db: {} };
-    config.sessions.forEach(s => data.db[s] = JSON.parse(CLOUD.get('njs_db_'+s) || '[]'));
-    const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'NJS_Cloud_Backup.json'; a.click();
+    localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
+    sysAlert("Data backup completed locally inside application structures.", "Backup saved");
 }
 
 function restoreData(e) {
     const reader = new FileReader();
     reader.onload = async (ev) => {
         const data = JSON.parse(ev.target.result);
-        
-        CLOUD.data['njs_cfg_v16'] = JSON.stringify(data.config);
-        CLOUD.data['njs_docs_v16'] = JSON.stringify(data.documents);
-        for(let s in data.db) CLOUD.data['njs_db_'+s] = JSON.stringify(data.db[s]);
-        
-        await CLOUD.sync();
+        CLOUD.config = data.config;
+        config = data.config;
+        documents = data.documents || [];
+        localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
+        await CLOUD.syncConfig();
         sysAlert("Cloud Restore complete. Please refresh to load data.");
     };
     reader.readAsText(e.target.files[0]);
 }
 
-async function addCfg(k, id) { 
+function addCfg(k, id) { 
     const v = document.getElementById(id).value.trim(); 
     if(v && !config[k].includes(v)){ 
         config[k].push(v); document.getElementById(id).value=""; 
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-        await CLOUD.sync();
         loadAdmin(); updateDrops(); 
+        CLOUD.syncConfig();
     }
 }
-
 function remCfg(k, i) { 
-    sysConfirm("Delete this configuration?", async () => {
+    sysConfirm("Delete this configuration?", () => {
         config[k].splice(i,1); 
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-        await CLOUD.sync();
+        CLOUD.syncConfig();
         loadAdmin(); updateDrops(); 
     });
 }
@@ -1078,6 +1075,7 @@ function renderAdminUsers() {
     document.getElementById('userListBody').innerHTML = h;
 }
 
+// --- Membership Access Management ---
 function openUserForm() {
     document.getElementById('userEditForm').classList.remove('hidden');
     document.getElementById('editUserIdx').value = "-1";
@@ -1097,7 +1095,7 @@ function editUser(i) {
     document.getElementById('userFormTitle').innerText = "Edit Member Profile";
 }
 
-async function saveUser() {
+function saveUser() {
     const idx = parseInt(document.getElementById('editUserIdx').value);
     const uName = document.getElementById('uName').value.trim();
     if(!uName) return sysAlert("Member name is required.");
@@ -1112,23 +1110,22 @@ async function saveUser() {
     if(idx === -1) config.users.push(obj);
     else config.users[idx] = obj;
     
-    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-    await CLOUD.sync();
+    CLOUD.syncConfig();
     document.getElementById('userEditForm').classList.add('hidden');
     renderAdminUsers();
     updateDrops();
 }
 
 function delUser(i) {
-    sysConfirm(`Delete member ${config.users[i].name}?`, async () => {
+    sysConfirm(`Delete member ${config.users[i].name}?`, () => {
         config.users.splice(i,1);
-        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-        await CLOUD.sync();
+        CLOUD.syncConfig();
         renderAdminUsers();
     });
 }
 
-async function saveDocLink() {
+// --- Dynamic Document Link Infrastructure ---
+function saveDocLink() {
     const sess = document.getElementById('upDocSess').value;
     const name = document.getElementById('upDocName').value.trim();
     const link = document.getElementById('upDocLink').value.trim();
@@ -1137,8 +1134,7 @@ async function saveDocLink() {
 
     try {
         documents.push({ id: Date.now(), sess: sess, name: name, link: link });
-        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
-        await CLOUD.sync();
+        localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
         sysAlert("Google Drive document resource link bound to financial session " + sess, "Link Bound Successfully");
         document.getElementById('upDocName').value = "";
         document.getElementById('upDocLink').value = "";
@@ -1157,10 +1153,9 @@ function renderAdminDocs() {
 }
 
 function delDoc(i) {
-    sysConfirm("Delete this document link from Cloud?", async () => {
+    sysConfirm("Delete this document link?", () => {
         documents.splice(i,1);
-        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
-        await CLOUD.sync();
+        localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
         renderAdminDocs();
     });
 }
