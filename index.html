@@ -1,18 +1,408 @@
-<script>
-// --- FORCE CLEAN BREAK ON REFRESH / INITIALIZATION ---
-window.addEventListener('DOMContentLoaded', () => {
-    // Force clear sticky browser form caches
-    const inputs = document.querySelectorAll('input, select, textarea');
-    inputs.forEach(input => {
-        if(input.type !== 'button' && input.type !== 'submit') {
-            input.value = '';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NJS CLUB | Master Cloud Ledger v16</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #881337; --accent: #be123c; --bg: #f8fafc; --card: #ffffff;
+            --text-main: #1e293b; --text-muted: #64748b; --danger: #ef4444;
+            --blue: #0284c7; --border: #e2e8f0; --warn: #f59e0b; --success: #10b981;
         }
-    });
-    // Clear standard browser tab session items to prevent data shadowing
-    sessionStorage.clear();
-});
 
-// --- Custom Modal System ---
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding-bottom: 90px; }
+
+        header { 
+            background: var(--card); color: var(--primary); padding: 1rem; 
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .container { max-width: 1250px; margin: 0 auto; padding: 15px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+
+        .banner-img { width: 100%; max-width: 800px; display: block; margin: 0 auto 20px auto; border-radius: 8px; }
+
+        .control-bar { display: flex; flex-wrap: wrap; gap: 10px; background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px; align-items: center; border: 1px solid var(--border); }
+        .tool-group { display: flex; align-items: center; gap: 8px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: var(--primary); color: white; padding: 12px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid var(--border); }
+        tr:hover { background-color: #f8fafc; }
+
+        .btn { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-blue { background: var(--blue); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warn { background: var(--warn); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-ghost { background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); display: flex; justify-content: space-around; padding: 12px 5px; border-top: 1px solid var(--border); z-index: 100; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .nav-item { text-align: center; font-size: 11px; color: var(--text-muted); cursor: pointer; flex: 1; font-weight: 600; padding: 8px 0; border-radius: 8px; transition: 0.2s; }
+        .nav-item:hover { background: #f1f5f9; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 18px; margin-bottom: 4px; display: block; }
+
+        .badge { background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-size: 12px; display: inline-flex; border: 1px solid var(--border); margin: 2px; align-items: center; gap: 6px; }
+        .hidden { display: none !important; }
+        
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-top: 5px; font-size: 14px; background: #fff; transition: 0.2s; }
+        input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.1); }
+        label { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px); }
+        .modal-box { background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+        .modal-title { font-size: 18px; font-weight: 700; margin-top: 0; color: var(--primary); }
+        .modal-msg { font-size: 15px; color: var(--text-main); margin: 15px 0 25px 0; line-height: 1.5; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+        .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .admin-tab { padding: 10px 15px; background: #f1f5f9; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; border: 1px solid var(--border); }
+        .admin-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .letterhead-preview { background: white; padding: 40px; border: 1px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 600px; position: relative; }
+        .lh-header { display: flex; justify-content: space-between; margin-top: 20px; font-weight: 600; font-size: 14px; }
+        .lh-content { min-height: 300px; margin-top: 40px; outline: none; border: 1px dashed transparent; padding: 10px; transition: 0.2s; }
+        .lh-content:focus { border-color: var(--blue); background: #f8fafc; }
+        .lh-footer { text-align: right; margin-top: 60px; font-weight: 600; }
+
+        .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .doc-card { padding: 15px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+
+        @media (max-width: 600px) { .control-bar { flex-direction: column; align-items: stretch; } }
+        @media print { .bottom-nav, header, .no-print, .control-bar, .admin-tabs { display: none !important; } body { padding: 0; background: white; } .card { border: none; box-shadow: none; padding: 0; margin: 0; } }
+    </style>
+</head>
+<body>
+
+<div id="sysAlertModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h3 class="modal-title" id="alertTitle">Notification</h3>
+        <p class="modal-msg" id="alertMsg"></p>
+        <button class="btn btn-primary" style="width: 100%" onclick="document.getElementById('sysAlertModal').classList.add('hidden')">OK</button>
+    </div>
+</div>
+
+<div id="sysConfirmModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h3 class="modal-title" style="color: var(--warn)">Confirmation</h3>
+        <p class="modal-msg" id="confirmMsg"></p>
+        <div class="modal-actions">
+            <button class="btn btn-ghost" style="flex: 1" onclick="resolveConfirm(false)">Cancel</button>
+            <button class="btn btn-primary" style="flex: 1" onclick="resolveConfirm(true)">Proceed</button>
+        </div>
+    </div>
+</div>
+
+<div id="publicHomepage">
+    <div style="position: absolute; top: 15px; right: 15px; z-index: 50;">
+        <button onclick="showAdminLogin()" class="btn btn-ghost" style="font-size: 11px; padding: 6px 12px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">⚙️ Admin Access</button>
+    </div>
+
+    <div class="container" style="padding-top: 60px; max-width: 800px;">
+        <div id="homeBannerTarget"></div>
+        
+        <div id="memberLoginCard" class="card" style="max-width: 400px; margin: 40px auto; border-top: 5px solid var(--primary); text-align: center;">
+            <h2 style="margin-top: 0; color: var(--primary);">Members Login</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 25px;">Select your profile and enter your secure key.</p>
+            
+            <div style="text-align: left;">
+                <label>Select Member</label>
+                <select id="pubLoginSelect"></select>
+                
+                <label>Access Key</label>
+                <input type="password" id="pubLoginKey" placeholder="Enter 6-digit key (e.g. A7K9P2)">
+            </div>
+            
+            <button onclick="loginMember()" class="btn btn-primary" style="width:100%; margin-top:25px; padding:12px; font-size: 14px;">SECURE LOGIN</button>
+        </div>
+
+        <div id="adminLoginCard" class="card hidden" style="max-width: 400px; margin: 40px auto; border-top: 5px solid var(--danger); text-align: center;">
+            <h2 style="margin-top: 0; color: var(--danger);">Admin Gateway</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 25px;">Restricted zone. Authorized personnel only.</p>
+            
+            <div style="text-align: left;">
+                <label>Master Password</label>
+                <input type="password" id="admLoginPass" placeholder="Enter administrator password">
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 25px;">
+                <button onclick="showMemberLogin()" class="btn btn-ghost" style="flex: 1; padding: 12px;">BACK</button>
+                <button onclick="loginAdmin()" class="btn btn-danger" style="flex: 2; padding: 12px; font-size: 14px;">AUTHORIZE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<header id="mainHeader" class="hidden">
+    <div>
+        <div id="dispClub" style="font-weight:800; font-size: 1.2rem; letter-spacing: -0.5px;"></div>
+        <div id="dispUser" style="font-size:11px; opacity: 0.9; margin-top: 2px;"></div>
+    </div>
+    <button onclick="location.reload()" class="btn btn-ghost" style="padding: 6px 12px; color: var(--primary); border: none;">LOGOUT</button>
+</header>
+
+<div class="container hidden" id="appContainer">
+    <div id="dashboard" class="app-section">
+        <div class="control-bar no-print">
+            <div class="tool-group">
+                <span style="font-size: 12px; font-weight: 700; color: var(--primary);">SESSION:</span>
+                <select id="sessionSelect" onchange="switchSession(this.value)" style="width:140px; margin:0; padding:6px; border: none; background: transparent; font-weight: 600; cursor: pointer;"></select>
+                <button id="btnNewSess" onclick="promptNewSession()" class="btn btn-primary admin-only" title="Add New Session" style="padding: 4px 10px; border-radius: 4px;">+</button>
+            </div>
+            <div class="tool-group admin-only">
+                <input type="file" id="xlIn" style="display:none" accept=".xlsx, .xls" onchange="importExcel(event)">
+                <button onclick="document.getElementById('xlIn').click()" class="btn btn-success" style="padding: 6px 10px; border-radius: 4px;">📥 Import Excel</button>
+            </div>
+            <div style="flex-grow: 1;"></div>
+            <button onclick="wipeData()" class="btn btn-danger admin-only" style="padding: 6px 10px; border-radius: 4px;">🗑 Wipe Session Data</button>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; color: var(--primary);">Live Journal</h3>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="exportTable('mainTable', 'Journal')" class="btn btn-ghost">📊 Export Excel</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="mainTable">
+                    <thead><tr><th>Date</th><th>Voucher</th><th>Particulars</th><th>Category</th><th>In (+)</th><th>Out (-)</th><th>Balance</th><th class="no-print admin-only-cell">Action</th></tr></thead>
+                    <tbody id="txnBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="entrySection" class="app-section card hidden admin-only">
+        <h3 id="formTitle" style="color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px;">New Transaction Entry</h3>
+        <input type="hidden" id="editIdx" value="-1">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div><label>Transaction Date</label><input type="date" id="tDate" onchange="genAI()"></div>
+            <div><label>Voucher Number</label><input id="tVou" placeholder="e.g. 001" oninput="genAI()"></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div><label>Account Head (Category)</label><select id="tCat" onchange="genAI()"></select></div>
+            <div><label>Member / Entity</label><select id="tMem" onchange="genAI()"></select></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div><label>Amount (₹)</label><input type="number" id="tAmt" placeholder="0.00" oninput="genAI()"></div>
+            <div><label>Entry Type</label><select id="tType" onchange="genAI()"><option value="dr">Money Receipt (Dr / In)</option><option value="cr">Payment Voucher (Cr / Out)</option></select></div>
+        </div>
+        <label>System Auto-Narration</label>
+        <textarea id="tBeing" rows="2" style="background: #f8fafc; font-style: italic; color: #475569;"></textarea>
+        <div style="display:flex; gap:10px; margin-top:25px;">
+            <button onclick="saveTxn()" class="btn btn-primary" style="flex: 2; padding: 15px; font-size: 15px;">POST TRANSACTION</button>
+            <button onclick="showAppSection('dashboard')" class="btn btn-ghost" style="flex: 1;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="ledgerSection" class="app-section hidden">
+        <div class="card">
+            <h3 style="margin-top:0; color: var(--primary);">General Ledgers</h3>
+            <div style="display:flex; flex-wrap: wrap; gap:10px; margin-bottom: 20px; align-items: flex-end;">
+                <div>
+                    <label style="margin-top:0">Filter Specific Head</label>
+                    <select id="ledgerFilter" onchange="renderLedger()" style="margin:0; width: 250px;"></select>
+                </div>
+                <button onclick="renderAllLedgers()" class="btn btn-primary" style="height: 42px;">View All Active Heads</button>
+            </div>
+            <div id="ledgerOutput"></div>
+        </div>
+    </div>
+
+    <div id="trialSection" class="app-section hidden">
+        <div class="card">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; color: var(--primary);">Trial Balance</h3>
+                <button onclick="exportTable('tblTrial', 'Trial_Balance')" class="btn btn-ghost" style="padding: 4px 8px; font-size: 11px;">📊 Export Excel</button>
+            </div>
+            <div id="trialOutput"></div>
+        </div>
+        <div class="card">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin:0; color: var(--primary);">Receipts & Payments (Summary)</h3>
+            </div>
+            <div id="summaryOutput"></div>
+        </div>
+    </div>
+
+    <div id="docSection" class="app-section hidden">
+        <div class="card">
+            <h3 style="margin-top:0; color: var(--primary);">Session Documents & Circulars</h3>
+            <p style="font-size: 13px; color: var(--text-muted);">View all uploaded PDFs grouped by financial session.</p>
+            <div style="margin-bottom: 20px;">
+                <label>Filter by Session</label>
+                <select id="docViewSess" onchange="renderDocGallery()" style="max-width: 300px;"></select>
+            </div>
+            <div id="docGallery" class="doc-grid"></div>
+        </div>
+    </div>
+
+    <div id="adminSection" class="app-section hidden admin-only">
+        <div class="card" style="padding-bottom: 0;">
+	    <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
+            <div class="admin-tabs">
+                <div class="admin-tab active" onclick="switchAdminTab('admGeneral', this)">General Settings</div>
+                <div class="admin-tab" onclick="switchAdminTab('admUsers', this)">Password & Members</div>
+                <div class="admin-tab" onclick="switchAdminTab('admUploads', this)">PDF Uploads</div>
+                <div class="admin-tab" onclick="switchAdminTab('admLetter', this)">Letterhead Builder</div>
+            </div>
+        </div>
+
+        <div id="admGeneral" class="admin-panel card">
+            <label>Organization Name</label><input id="admClub">
+            <label>Master Admin Password</label><input id="admPassA" type="password">
+            
+            <label>Master Signatories (For Printouts)</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                <input id="admSigA" placeholder="Approved By">
+                <input id="admSigT" placeholder="Treasurer">
+                <input id="admSigS" placeholder="Secretary">
+            </div>
+
+            <hr style="margin:25px 0; border:0; border-top:1px solid var(--border)">
+            
+            <div>
+                <label>Manage Account Heads (Categories)</label>
+                <div id="admCatList" style="padding:10px 0; max-height:150px; overflow-y:auto;"></div>
+                <div style="display:flex; gap:5px; max-width: 400px;"><input id="newC" placeholder="New category head..."><button onclick="addCfg('cats','newC')" class="btn btn-success">Add Head</button></div>
+            </div>
+
+            <hr style="margin:25px 0; border:0; border-top:1px solid var(--border)">
+            <div>
+                <label>Data Management (Backup/Restore)</label>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="backupData()" class="btn btn-blue">💾 Backup Data</button>
+                    <input type="file" id="restoreIn" style="display:none" accept=".json" onchange="restoreData(event)">
+                    <button onclick="document.getElementById('restoreIn').click()" class="btn btn-warn">🔄 Restore Backup</button>
+                </div>
+            </div>
+
+            <button onclick="saveAdminGeneral()" class="btn btn-primary" style="width:100%; margin-top:35px; padding:15px;">COMMIT SYSTEM CHANGES</button>
+        </div>
+
+        <div id="admUsers" class="admin-panel card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h4 style="margin: 0;">Member Access Control</h4>
+                <button onclick="openUserForm()" class="btn btn-success">+ Add Member</button>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Name</th><th>Access Key</th><th>Valid Till</th><th>Action</th></tr></thead>
+                    <tbody id="userListBody"></tbody>
+                </table>
+            </div>
+
+            <div id="userEditForm" class="hidden" style="margin-top: 25px; padding: 15px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;">
+                <h4 id="userFormTitle" style="margin-top: 0;">Add / Edit Member</h4>
+                <input type="hidden" id="editUserIdx" value="-1">
+                <label>Member Name</label>
+                <input id="uName" placeholder="e.g. John Doe">
+                
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                    <div>
+                        <label>Unique 6-Digit Key</label>
+                        <div style="display: flex; gap: 5px;">
+                            <input id="uKey" placeholder="A7K9P2" maxlength="6" style="text-transform: uppercase;">
+                            <button onclick="document.getElementById('uKey').value = Math.random().toString(36).substring(2,8).toUpperCase()" class="btn btn-ghost" style="margin-top: 5px;">Generate</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Valid Till (MM/YYYY)</label>
+                        <input id="uValid" placeholder="12/2026">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="saveUser()" class="btn btn-primary" style="flex: 1">Save Member</button>
+                    <button onclick="document.getElementById('userEditForm').classList.add('hidden')" class="btn btn-ghost">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="admUploads" class="admin-panel card hidden">
+            <h4 style="margin-top: 0;">Upload Session Documents (PDF)</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom: 15px;">
+                <div><label>Assign to Session</label><select id="upDocSess"></select></div>
+                <div><label>Event / Document Name</label><input id="upDocName" placeholder="e.g. Durga Puja Audit Report"></div>
+            </div>
+            <label>Select PDF File</label>
+            <input type="file" id="upDocFile" accept="application/pdf" style="padding: 10px; background: white;">
+            <button onclick="uploadDoc()" class="btn btn-success" style="margin-top: 15px; width: 100%; padding: 12px;">UPLOAD & BIND DOCUMENT</button>
+
+            <h4 style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">Manage Uploaded Documents</h4>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Session</th><th>Document Name</th><th>Action</th></tr></thead>
+                    <tbody id="upDocList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="admLetter" class="admin-panel card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" class="no-print">
+                <h4 style="margin: 0;">Official Letterhead Builder</h4>
+                <button onclick="window.print()" class="btn btn-blue">⎙ Print Letter</button>
+            </div>
+            
+            <div class="letterhead-preview">
+                <div id="lhBannerTarget" style="border-bottom: 3px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px;"></div>
+                <div class="lh-header">
+                    <div>Ref No: <span contenteditable="true" style="display:inline-block; min-width: 100px; border-bottom: 1px dotted #ccc;"></span></div>
+                    <div>Date: <span contenteditable="true" style="display:inline-block; min-width: 100px; border-bottom: 1px dotted #ccc;" id="lhDate"></span></div>
+                </div>
+                <div class="lh-content" contenteditable="true">
+                    <b>To,</b><br>
+                    [Type Recipient Name]<br><br>
+                    <b>Subject: </b>[Type Subject Here]<br><br>
+                    Dear Sir/Madam,<br><br>
+                    [Start typing your official letter content here...]
+                </div>
+                <div class="lh-footer">
+                    <span contenteditable="true" style="display:inline-block; min-width: 150px; min-height: 40px; border-bottom: 1px dotted #ccc; margin-bottom: 5px;"></span><br>
+                    <span id="lhSigAuth">Authorized Signatory</span><br>
+                    <span style="font-size: 12px; color: #666; font-weight: normal;" id="lhClubName">Club Name</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<nav class="bottom-nav hidden" id="mobileNav">
+    <div class="nav-item" onclick="showAppSection('dashboard');" id="navJournal">
+        <span class="nav-icon">📑</span> Journal
+    </div>
+    <div class="nav-item admin-only" onclick="showAppSection('entrySection'); resetForm()" id="navEntry">
+        <span class="nav-icon">➕</span> Entry
+    </div>
+    <div class="nav-item" onclick="showAppSection('ledgerSection'); renderLedger()" id="navLedger">
+        <span class="nav-icon">📖</span> Ledger
+    </div>
+    <div class="nav-item" onclick="showAppSection('trialSection'); renderTrial(); renderSummary();" id="navReports">
+        <span class="nav-icon">📊</span> Reports
+    </div>
+    <div class="nav-item" onclick="showAppSection('docSection'); renderDocGallery();" id="navDocs">
+        <span class="nav-icon">📂</span> Documents
+    </div>
+    <div class="nav-item admin-only" id="navAdmin" onclick="showAppSection('adminSection'); loadAdmin()">
+        <span class="nav-icon">⚙️</span> Admin
+    </div>
+</nav>
+
+<script>
 function sysAlert(msg, title='Notification') {
     document.getElementById('alertTitle').innerText = title;
     document.getElementById('alertMsg').innerText = msg;
@@ -31,7 +421,6 @@ function resolveConfirm(res) {
     confirmCallback = null;
 }
 
-// --- Cloud Storage Adapter (JSONBin.io) ---
 const CLOUD = {
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
     ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
@@ -44,22 +433,42 @@ const CLOUD = {
         loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;font-weight:600;color:#881337;">Connecting Cloud Ledger...</div>';
         document.body.appendChild(loader);
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
                 headers: { "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY },
-                cache: "no-store" // Force browser to bypass historical data cache
+                cache: "no-store",
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
+            
+            if (!res.ok) throw new Error(`HTTP Error Status: ${res.status}`);
             const json = await res.json();
             this.data = json.record || {};
         } catch(e) {
-            sysAlert("Cloud sync server connection failed.");
+            clearTimeout(timeoutId);
+            console.error("Cloud Error Details:", e);
+            this.data = JSON.parse(localStorage.getItem('njs_cached_fallback') || "{}");
+            setTimeout(() => {
+                sysAlert("Network handshake timeout. Operating securely in offline/cached snapshot status mode.");
+            }, 1000);
+        } finally {
+            const activeLoader = document.getElementById("cloudLoaderOverlay");
+            if(activeLoader) document.body.removeChild(activeLoader);
         }
-        const activeLoader = document.getElementById("cloudLoaderOverlay");
-        if(activeLoader) document.body.removeChild(activeLoader);
     },
 
-    get(key) { return this.data[key] || null; },
-    set(key, val) { this.data[key] = val; this.sync(); },
+    get(key) {
+        return this.data[key] || null;
+    },
+
+    set(key, val) {
+        this.data[key] = val;
+        localStorage.setItem('njs_cached_fallback', JSON.stringify(this.data));
+        this.sync();
+    },
 
     async sync() {
         try {
@@ -73,12 +482,12 @@ const CLOUD = {
                 body: JSON.stringify(this.data)
             });
         } catch(e) {
-            console.error("Cloud storage sync failure:", e);
+            console.error("Sync payload error notification:", e);
         }
     }
 };
 
-let curSess, config, records, documents, currentUserObj;
+let curSess, config, records, documents, currentUserObj = null;
 
 const staticBannerHTML = `
 <div style="display: flex; align-items: stretch; max-width: 800px; margin: 0 auto 20px auto; color: #a31621; font-family: Arial, sans-serif; background: white; overflow: hidden; padding: 10px;">
@@ -124,7 +533,7 @@ function fmtDate(dStr) {
 
 window.onload = async () => {
     await CLOUD.init();
-
+    
     curSess = CLOUD.get('njs_active_sess') || '2024-25';
     let rawCfg = CLOUD.get('njs_cfg_v16');
     
@@ -146,727 +555,536 @@ window.onload = async () => {
                 { name: 'Apan Roy', key: 'P6Q7R8', validTill: '09/2025', role: 'member' },
                 { name: 'Premchand Mondal', key: 'S9T0U1', validTill: '09/2025', role: 'member' },
                 { name: 'Kalyan Karmakar', key: 'V2W3X4', validTill: '06/2025', role: 'member' },
-                { name: 'Prasanta Das', key: 'Y5Z6A7', validTill: '06/2025', role: 'member' }
+                { name: 'Prasanta Das', key: 'Y5Z6A7', validTill: '06/2025', role: 'member' },
+                { name: 'Arun Ghosh', key: 'B8C9D0', validTill: '11/2025', role: 'member' },
+                { name: 'Deb Kumar Deb', key: 'E1F2G3', validTill: '06/2026', role: 'member' },
+                { name: 'Chandan Sengupta', key: 'H4I5J6', validTill: '08/2025', role: 'member' },
+                { name: 'Bijoy Paul', key: 'K7L8M9', validTill: '03/2025', role: 'member' },
+                { name: 'Chanchal Sarkar', key: 'N0O1P2', validTill: '04/2025', role: 'member' },
+                { name: 'Anal Sharma Roy', key: 'Q3R4S5', validTill: '02/2025', role: 'member' },
+                { name: 'Samar Saha', key: 'T6U7V8', validTill: '04/2024', role: 'member' },
+                { name: 'Sushanta Sarkar', key: 'W9X0Y1', validTill: '01/2026', role: 'member' },
+                { name: 'Rajib Saha', key: 'Z2A3B4', validTill: '12/2025', role: 'member' },
+                { name: 'Goutam Paul', key: 'C5D6E7', validTill: '12/2025', role: 'member' },
+                { name: 'Joy Mukherjee', key: 'F8G9H0', validTill: '08/2025', role: 'member' },
+                { name: 'Amit Thakur', key: 'I1J2K3', validTill: '08/2025', role: 'member' },
+                { name: 'Gora Mondal', key: 'L4M5N6', validTill: '06/2025', role: 'member' },
+                { name: 'Shyamal Das', key: 'O7P8Q9', validTill: '04/2025', role: 'member' },
+                { name: 'Barun Deb', key: 'R0S1T2', validTill: '12/2025', role: 'member' },
+                { name: 'Tamal Das', key: 'U3V4W5', validTill: '10/2024', role: 'member' },
+                { name: 'Kartik Dutta', key: 'X6Y7Z8', validTill: '03/2024', role: 'member' }
             ]
         };
         CLOUD.set('njs_cfg_v16', JSON.stringify(config));
     }
 
-    records = JSON.parse(CLOUD.get('njs_txns_' + curSess) || '[]');
-    documents = JSON.parse(CLOUD.get('njs_docs') || '[]');
+    documents = JSON.parse(CLOUD.get('njs_docs_v16') || "[]");
 
     document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
     document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
 
-    initLoginSelects();
+    let opts = '<option value="">-- Select Profile --</option>';
+    config.users.forEach(u => opts += `<option value="${u.name}">${u.name}</option>`);
+    document.getElementById('pubLoginSelect').innerHTML = opts;
     
-    // Check if session keys exist to clear auto-restores
-    if (sessionStorage.getItem('activeRole')) {
-        restoreUIAfterRefresh();
-    } else {
-        showPublicHome();
-    }
+    document.getElementById('lhDate').innerText = fmtDate(new Date().toISOString().split('T')[0]);
 };
-
-function initLoginSelects() {
-    const s = document.getElementById('pubLoginSelect');
-    s.innerHTML = '';
-    config.users.forEach(u => {
-        let opt = document.createElement('option');
-        opt.value = u.key;
-        opt.innerText = u.name;
-        s.appendChild(opt);
-    });
-}
-
-function showPublicHome() {
-    document.getElementById('publicHomepage').classList.remove('hidden');
-    document.getElementById('mainHeader').classList.add('hidden');
-    document.getElementById('appContainer').classList.add('hidden');
-    document.getElementById('mobileNav').classList.add('hidden');
-    showMemberLogin();
-}
 
 function showAdminLogin() {
     document.getElementById('memberLoginCard').classList.add('hidden');
     document.getElementById('adminLoginCard').classList.remove('hidden');
-    document.getElementById('admLoginPass').value = '';
 }
 
 function showMemberLogin() {
     document.getElementById('adminLoginCard').classList.add('hidden');
     document.getElementById('memberLoginCard').classList.remove('hidden');
-    document.getElementById('pubLoginKey').value = '';
 }
 
 function loginAdmin() {
     const p = document.getElementById('admLoginPass').value;
-    if (p === config.passA) {
-        sessionStorage.setItem('activeRole', 'admin');
+    if(p === config.passA) {
         currentUserObj = { name: 'Administrator', role: 'admin' };
-        enterApp();
+        finalizeLogin();
     } else {
-        sysAlert('Invalid Administrator Master Password.');
+        sysAlert("Invalid Master Password", "Access Denied");
     }
 }
 
 function loginMember() {
-    const key = document.getElementById('pubLoginKey').value.trim().toUpperCase();
-    const matched = config.users.find(u => u.key.toUpperCase() === key);
-    if (matched) {
-        sessionStorage.setItem('activeRole', 'member');
-        sessionStorage.setItem('activeUserKey', matched.key);
-        currentUserObj = matched;
-        enterApp();
+    const sel = document.getElementById('pubLoginSelect').value;
+    const key = document.getElementById('pubLoginKey').value.toUpperCase();
+    
+    if(!sel) return sysAlert("Please select a member profile.");
+    
+    const u = config.users.find(x => x.name === sel);
+    if(u && u.key === key) {
+        currentUserObj = u;
+        finalizeLogin();
+        setTimeout(() => {
+            sysAlert(`Your Club Membership Has been Updated Till ${u.validTill}`, "Login Successful");
+        }, 500);
     } else {
-        sysAlert('Invalid Access Key provided.');
+        sysAlert("Invalid Access Key. Please check and try again.", "Authentication Failed");
     }
 }
 
-function enterApp() {
+function finalizeLogin() {
     document.getElementById('publicHomepage').classList.add('hidden');
-    document.getElementById('mainHeader').classList.remove('remove');
+    document.getElementById('mainHeader').classList.remove('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
     document.getElementById('mobileNav').classList.remove('hidden');
-
-    document.getElementById('dispClub').innerText = config.club.toUpperCase();
-    document.getElementById('dispUser').innerText = currentUserObj.role === 'admin' ? '🔒 ADMIN PRIVILEGES' : `👤 MEMBER: ${currentUserObj.name.toUpperCase()}`;
-
-    if (currentUserObj.role === 'admin') {
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-    } else {
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+    
+    document.getElementById('dispClub').innerText = config.club;
+    document.getElementById('dispUser').innerText = `Logged in as: ${currentUserObj.name} | Role: ${currentUserObj.role.toUpperCase()}`;
+    
+    const isAdmin = currentUserObj.role === 'admin';
+    document.querySelectorAll('.admin-only').forEach(el => {
+        if(isAdmin) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    });
+    
+    if(!isAdmin) {
+        document.querySelectorAll('.admin-only-cell').forEach(el => el.style.display = 'none');
     }
 
-    buildSessionSelectors();
+    loadRecordsForSession();
+    updateDrops();
     showAppSection('dashboard');
 }
 
-function restoreUIAfterRefresh() {
-    const role = sessionStorage.getItem('activeRole');
-    if (role === 'admin') {
-        currentUserObj = { name: 'Administrator', role: 'admin' };
-        enterApp();
-    } else {
-        const key = sessionStorage.getItem('activeUserKey');
-        const matched = config.users.find(u => u.key === key);
-        if (matched) {
-            currentUserObj = matched;
-            enterApp();
-        } else {
-            logoutSession();
-        }
-    }
+function showAppSection(id) {
+    document.querySelectorAll('.app-section').forEach(d => d.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(d => d.classList.remove('active'));
+
+    const navMap = {
+        dashboard: 'navJournal',
+        entrySection: 'navEntry',
+        ledgerSection: 'navLedger',
+        trialSection: 'navReports',
+        docSection: 'navDocs',
+        adminSection: 'navAdmin'
+    };
+
+    if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
 }
 
-function logoutSession() {
-    sessionStorage.clear();
-    currentUserObj = null;
+function switchSession(v) { 
+    curSess = v; 
+    CLOUD.set('njs_active_sess', v); 
     
-    // Clear login fields
-    document.getElementById('pubLoginKey').value = '';
-    document.getElementById('admLoginPass').value = '';
+    loadRecordsForSession();
+    updateDrops();
     
-    document.getElementById('mainHeader').classList.add('hidden');
-    document.getElementById('appContainer').classList.add('hidden');
-    document.getElementById('mobileNav').classList.add('hidden');
-    document.getElementById('publicHomepage').classList.remove('hidden');
-    showMemberLogin();
-}
-
-function buildSessionSelectors() {
-    const s1 = document.getElementById('sessionSelect');
-    const s2 = document.getElementById('upDocSess');
-    const s3 = document.getElementById('docViewSess');
-
-    [s1, s2, s3].forEach(sel => {
-        if(!sel) return;
-        sel.innerHTML = '';
-        config.sessions.forEach(sess => {
-            let opt = document.createElement('option');
-            opt.value = sess; opt.innerText = `Session ${sess}`;
-            sel.appendChild(opt);
-        });
-    });
-    s1.value = curSess;
-    s3.value = curSess;
-}
-
-function switchSession(val) {
-    curSess = val;
-    CLOUD.set('njs_active_sess', val);
-    records = JSON.parse(CLOUD.get('njs_txns_' + curSess) || '[]');
-    refresh();
+    if(!document.getElementById('dashboard').classList.contains('hidden')) refresh();
+    if(!document.getElementById('ledgerSection').classList.contains('hidden')) renderLedger();
+    if(!document.getElementById('trialSection').classList.contains('hidden')) { renderTrial(); renderSummary(); }
+    if(!document.getElementById('docSection').classList.contains('hidden')) renderDocGallery();
 }
 
 function promptNewSession() {
-    let s = prompt("Enter new financial session format (e.g. 2025-26):");
-    if (s && s.trim()) {
-        s = s.trim();
-        if (!config.sessions.includes(s)) {
-            config.sessions.push(s);
+    const s = prompt("Enter Name for the new Session (e.g. 2026-27 or Annual Event):");
+    if(s && s.trim() !== '') {
+        const clean = s.trim();
+        if(!config.sessions.includes(clean)) {
+            config.sessions.push(clean);
             CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-            buildSessionSelectors();
-            switchSession(s);
         }
+        switchSession(clean);
     }
 }
 
-function showAppSection(id) {
-    document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden'));
-    document.getElementById(id).classList.remove('hidden');
-
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    if (id === 'dashboard') document.getElementById('navJournal').classList.add('active');
-    if (id === 'entrySection') document.getElementById('navEntry').classList.add('active');
-    if (id === 'ledgerSection') document.getElementById('navLedger').classList.add('active');
-    if (id === 'trialSection') document.getElementById('navReports').classList.add('active');
-    if (id === 'docSection') document.getElementById('navDocs').classList.add('active');
-    if (id === 'adminSection') document.getElementById('navAdmin').classList.add('active');
-
-    if (id === 'dashboard') refresh();
+function loadRecordsForSession() {
+    records = JSON.parse(CLOUD.get('njs_db_' + curSess) || "[]");
+    refresh();
 }
 
 function refresh() {
-    renderJournal();
-    initEntryOptions();
-}
+    records.sort((a,b) => (new Date(a.date).getTime() || 0) - (new Date(b.date).getTime() || 0));
+    let bal = 0, h = '', totalDr = 0, totalCr = 0;
+    const isAdmin = currentUserObj && currentUserObj.role === 'admin';
 
-function initEntryOptions() {
-    const catSel = document.getElementById('tCat');
-    const memSel = document.getElementById('tMem');
+    records.forEach((r, i) => {
+        r.dr = parseFloat(String(r.dr).replace(/[^0-9.-]+/g,"")) || 0;
+        r.cr = parseFloat(String(r.cr).replace(/[^0-9.-]+/g,"")) || 0;
 
-    catSel.innerHTML = '';
-    config.cats.forEach(c => {
-        let o = document.createElement('option'); o.value = c; o.innerText = c;
-        catSel.appendChild(o);
+        bal = parseFloat((bal + r.dr - r.cr).toFixed(2));
+        totalDr = parseFloat((totalDr + r.dr).toFixed(2));
+        totalCr = parseFloat((totalCr + r.cr).toFixed(2));
+        
+        let balColor = bal >= 0 ? 'var(--success)' : 'var(--danger)';
+        let balStr = bal >= 0 ? `₹${bal}` : `-₹${Math.abs(bal)}`;
+
+        h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou||'-'}</td><td>${r.mem}</td><td>${r.cat}</td>
+        <td style="color:var(--success); font-weight:600">₹${r.dr}</td><td style="color:var(--danger); font-weight:600">₹${r.cr}</td>
+        <td style="color:${balColor}; font-weight:700">${balStr}</td>
+        <td class="no-print" style="white-space:nowrap;">
+            <button onclick="printV(${i})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;" title="Print">⎙</button>
+            <button onclick="editRec(${i})" class="btn btn-warn ${isAdmin?'':'hidden'}" style="padding:4px 8px; font-size:11px;" title="Edit">✎</button>
+            <button onclick="delRec(${i})" class="btn btn-danger ${isAdmin?'':'hidden'}" style="padding:4px 8px; font-size:11px;" title="Delete">×</button>
+        </td></tr>`;
     });
+    
+    h += `<tr style="background:#f1f5f9; font-weight:700;">
+        <td colspan="4" style="text-align:right; color:var(--primary);">TOTAL (SESSION):</td>
+        <td style="color:var(--success);">₹${totalDr}</td>
+        <td style="color:var(--danger);">₹${totalCr}</td>
+        <td style="color:${bal >= 0 ? 'var(--success)' : 'var(--danger)'};">₹${bal >= 0 ? bal : '-'+Math.abs(bal)}</td>
+        <td class="no-print" style="${!isAdmin ? 'display:none;' : ''}"></td>
+    </tr>`;
 
-    memSel.innerHTML = '<option value="General">General / Counter</option>';
-    config.users.forEach(u => {
-        let o = document.createElement('option'); o.value = u.name; o.innerText = u.name;
-        memSel.appendChild(o);
-    });
+    document.getElementById('txnBody').innerHTML = h;
+    CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
 }
 
 function genAI() {
-    const date = fmtDate(document.getElementById('tDate').value);
-    const vou = document.getElementById('tVou').value;
-    const cat = document.getElementById('tCat').value;
-    const mem = document.getElementById('tMem').value;
-    const amt = document.getElementById('tAmt').value;
-    const type = document.getElementById('tType').value;
-
-    let text = "";
-    if (amt && cat) {
-        if (type === 'dr') {
-            text = `Being amount of ₹${amt} received from ${mem} on account of ${cat} dated ${date || '[Pending]'}. Received against reference voucher #${vou || '[N/A]'}.`;
-        } else {
-            text = `Being professional payment of ₹${amt} debited/paid out to ${mem} towards ${cat} requirements dated ${date || '[Pending]'}. Handled via voucher #${vou || '[N/A]'}.`;
-        }
-    }
-    document.getElementById('tBeing').value = text;
-}
-
-function resetForm() {
-    document.getElementById('editIdx').value = "-1";
-    document.getElementById('formTitle').innerText = "New Transaction Entry";
-    document.getElementById('tDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('tVou').value = "";
-    document.getElementById('tAmt').value = "";
-    document.getElementById('tBeing').value = "";
-    initEntryOptions();
-    genAI();
+    const t = document.getElementById('tType').value, m = document.getElementById('tMem').value, c = document.getElementById('tCat').value, a = document.getElementById('tAmt').value||0, v = document.getElementById('tVou').value||'N/A';
+    const action = t==='dr' ? 'received from' : 'paid to';
+    const doc = t==='dr' ? 'Money Receipt' : 'Payment Voucher';
+    document.getElementById('tBeing').value = `Being the amount ${action} ${m} on account of ${c} vide ${doc} No. ${v} amounting to Rs. ${a}/-.`;
 }
 
 function saveTxn() {
     const idx = parseInt(document.getElementById('editIdx').value);
-    const date = document.getElementById('tDate').value;
-    const vou = document.getElementById('tVou').value.trim();
-    const cat = document.getElementById('tCat').value;
-    const mem = document.getElementById('tMem').value;
-    const amt = parseFloat(document.getElementById('tAmt').value) || 0;
-    const type = document.getElementById('tType').value;
-    const being = document.getElementById('tBeing').value;
-
-    if (!date || amt <= 0) {
-        sysAlert("Please enter a valid date and allocation amount!");
-        return;
-    }
-
-    const item = {
-        date, vou, cat, mem,
-        dr: type === 'dr' ? amt : 0,
-        cr: type === 'cr' ? amt : 0,
-        being
+    const data = {
+        date: document.getElementById('tDate').value, vou: document.getElementById('tVou').value, cat: document.getElementById('tCat').value, mem: document.getElementById('tMem').value,
+        dr: document.getElementById('tType').value === 'dr' ? parseFloat(document.getElementById('tAmt').value)||0 : 0,
+        cr: document.getElementById('tType').value === 'cr' ? parseFloat(document.getElementById('tAmt').value)||0 : 0,
+        being: document.getElementById('tBeing').value
     };
-
-    if (idx === -1) {
-        records.push(item);
-    } else {
-        records[idx] = item;
-    }
-
-    CLOUD.set('njs_txns_' + curSess, JSON.stringify(records));
-    sysAlert("Transaction successfully captured and saved to cloud!");
-    showAppSection('dashboard');
+    if(idx === -1) records.push(data); else records[idx] = data;
+    refresh(); showAppSection('dashboard');
 }
 
-function editTxn(idx) {
-    const item = records[idx];
-    showAppSection('entrySection');
-    initEntryOptions();
-
-    document.getElementById('editIdx').value = idx;
-    document.getElementById('formTitle').innerText = "Modify Existing Transaction Entry";
-    document.getElementById('tDate').value = item.date;
-    document.getElementById('tVou').value = item.vou;
-    document.getElementById('tCat').value = item.cat;
-    document.getElementById('tMem').value = item.mem;
-    document.getElementById('tAmt').value = item.dr > 0 ? item.dr : item.cr;
-    document.getElementById('tType').value = item.dr > 0 ? 'dr' : 'cr';
-    document.getElementById('tBeing').value = item.being;
+function editRec(i) {
+    const r = records[i]; showAppSection('entrySection');
+    document.getElementById('editIdx').value = i; document.getElementById('tDate').value = r.date;
+    document.getElementById('tVou').value = r.vou; document.getElementById('tCat').value = r.cat; document.getElementById('tMem').value = r.mem;
+    document.getElementById('tAmt').value = r.dr || r.cr; document.getElementById('tType').value = r.dr > 0 ? 'dr' : 'cr';
+    document.getElementById('tBeing').value = r.being;
 }
 
-function deleteTxn(idx) {
-    sysConfirm("Are you completely sure you want to permanently erase this ledger line transaction?", () => {
-        records.splice(idx, 1);
-        CLOUD.set('njs_txns_' + curSess, JSON.stringify(records));
-        refresh();
-    });
-}
+function delRec(i) { sysConfirm("Permanently delete this journal entry?", () => { records.splice(i,1); refresh(); }); }
+function wipeData() { sysConfirm("DANGER: Wipe entire database for this session?", () => { records = []; refresh(); }); }
+function resetForm() { document.getElementById('editIdx').value = "-1"; document.getElementById('tDate').value = new Date().toISOString().split('T')[0]; document.getElementById('tAmt').value = ""; genAI(); }
 
-function renderJournal() {
-    const tbody = document.getElementById('txnBody');
-    tbody.innerHTML = '';
+function updateDrops() {
+    const c = config.cats.map(x => `<option value="${x}">${x}</option>`).join('');
+    const m = config.users.map(x => `<option value="${x.name}">${x.name}</option>`).join('');
+    const s = config.sessions.map(x => `<option value="${x}" ${curSess===x?'selected':''}>${x}</option>`).join('');
     
-    // Process running balance chronologically
-    let running = 0;
-    records.sort((a,b) => new Date(a.date) - new Date(b.date));
+    document.getElementById('tCat').innerHTML = c; document.getElementById('tMem').innerHTML = m;
+    document.getElementById('ledgerFilter').innerHTML = c; 
+    document.getElementById('sessionSelect').innerHTML = s;
+    document.getElementById('docViewSess').innerHTML = `<option value="ALL">All Sessions</option>` + s;
+    document.getElementById('upDocSess').innerHTML = s;
+}
 
-    records.forEach((r, idx) => {
-        running += (r.dr - r.cr);
-        let tr = document.createElement('tr');
-        
-        let actionCell = currentUserObj.role === 'admin' 
-            ? `<td class="no-print"><button onclick="editTxn(${idx})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;">✏️</button> <button onclick="deleteTxn(${idx})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">🗑</button></td>`
-            : `<td class="no-print text-muted">Read-only</td>`;
-
-        tr.innerHTML = `
-            <td><b>${fmtDate(r.date)}</b></td>
-            <td><code style="color:var(--accent); font-weight:700;">${r.vou || '-'}</code></td>
-            <td><div><b>${r.mem}</b></div><div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${r.being}</div></td>
-            <td><span class="badge">${r.cat}</span></td>
-            <td style="color:var(--success); font-weight:600;">${r.dr > 0 ? '₹'+r.dr.toFixed(2) : '-'}</td>
-            <td style="color:var(--danger); font-weight:600;">${r.cr > 0 ? '₹'+r.cr.toFixed(2) : '-'}</td>
-            <td style="font-weight:700; color:${running >= 0 ? 'var(--text-main)': 'var(--danger)'}">₹${running.toFixed(2)}</td>
-            ${actionCell}
-        `;
-        tbody.appendChild(tr);
-    });
-
-    if(records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">No records found under Session ${curSess}</td></tr>`;
-    }
+function printV(i) {
+    const r = records[i];
+    const w = window.open('','','width=800,height=800');
+    w.document.write(`
+    <html><head><title>Print Voucher</title>
+    <style>body{font-family:sans-serif; margin:0; padding:20px;} .box{border:2px solid #000; padding:25px; max-width: 800px; margin: 0 auto;}</style>
+    </head><body>
+    <div class="box">
+        ${staticBannerHTML}
+        <center><h3 style="background:#eee; display:inline-block; padding:8px 15px; border:1px solid #000; border-radius:4px; margin-top: 5px;">${r.dr>0?'MONEY RECEIPT':'PAYMENT VOUCHER'}</h3></center>
+        <p style="margin-top: 20px;">No: <b>${r.vou||'N/A'}</b> <span style="float:right">Date: <b>${fmtDate(r.date)}</b></span></p>
+        <p><b>Particulars:</b> ${r.mem}</p><p><b>Account Head:</b> ${r.cat}</p><p><b>Being:</b> ${r.being}</p>
+        <h3 style="border:2px dotted #000; padding:15px; display:inline-block; background:#f9f9f9;">AMOUNT: ₹ ${r.dr||r.cr}/-</h3>
+        <div style="margin-top:80px; display:flex; justify-content:space-between; text-align:center;">
+            <div>__________________<br><br><b>${config.sigA}</b><br><small>Approved</small></div>
+            <div>__________________<br><br><b>${config.sigT}</b><br><small>Treasurer</small></div>
+            <div>__________________<br><br><b>${config.sigS}</b><br><small>Secretary</small></div>
+        </div>
+    </div>
+    <script>window.onload=()=>{window.print();window.close();}<\/script>
+    </body></html>`);
+    w.document.close();
 }
 
 function renderLedger() {
-    const filter = document.getElementById('ledgerFilter');
-    filter.innerHTML = '';
-    config.cats.forEach(c => {
-        let o = document.createElement('option'); o.value = c; o.innerText = c;
-        filter.appendChild(o);
-    });
-
-    const targetHead = filter.value;
-    const out = document.getElementById('ledgerOutput');
-    if(!targetHead) {
-        out.innerHTML = '<p style="color:var(--text-muted)">Create financial categories first.</p>';
-        return;
+    const f = document.getElementById('ledgerFilter').value;
+    const items = records.filter(r => r.cat === f);
+    let h = `<div class="card" style="border-left:5px solid var(--primary)"><h4>${f} Ledger</h4><table><thead><tr><th>Date</th><th>Voucher</th><th>Part</th><th>Dr</th><th>Cr</th><th>Balance</th></tr></thead><tbody>`;
+    if(items.length > 0) {
+        let catBal = 0;
+        items.forEach(r => {
+            catBal = parseFloat((catBal + (parseFloat(r.dr)||0) - (parseFloat(r.cr)||0)).toFixed(2));
+            let balStr = catBal >= 0 ? `₹${catBal}` : `-₹${Math.abs(catBal)}`;
+            h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">${balStr}</td></tr>`;
+        });
+    } else {
+        h += `<tr><td colspan="6" style="text-align:center; color:var(--text-muted)">No transactions recorded in this head.</td></tr>`;
     }
-
-    let filtered = records.filter(r => r.cat === targetHead);
-    out.innerHTML = buildSingleLedgerHTML(targetHead, filtered);
+    document.getElementById('ledgerOutput').innerHTML = h + `</tbody></table></div>`;
 }
 
 function renderAllLedgers() {
-    const out = document.getElementById('ledgerOutput');
-    let html = "";
-    config.cats.forEach(cat => {
-        let matches = records.filter(r => r.cat === cat);
-        if(matches.length > 0) {
-            html += buildSingleLedgerHTML(cat, matches) + "<div style='margin-bottom:40px;'></div>";
+    let h = '';
+    config.cats.forEach(c => {
+        const items = records.filter(r => r.cat === c);
+        if(items.length > 0) {
+            h += `<div class="card"><h4>${c}</h4><table><thead><tr><th>Date</th><th>Voucher</th><th>Part</th><th>Dr</th><th>Cr</th><th>Balance</th></tr></thead><tbody>`;
+            let catBal = 0;
+            items.forEach(r => {
+                catBal = parseFloat((catBal + (parseFloat(r.dr)||0) - (parseFloat(r.cr)||0)).toFixed(2));
+                let balStr = catBal >= 0 ? `₹${catBal}` : `-₹${Math.abs(catBal)}`;
+                h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">${balStr}</td></tr>`;
+            });
+            h += `</tbody></table></div>`;
         }
     });
-    out.innerHTML = html || '<p style="color:var(--text-muted)">No computational data active matching transactional categories.</p>';
-}
-
-function buildSingleLedgerHTML(title, list) {
-    let run = 0;
-    let rows = list.map(r => {
-        run += (r.dr - r.cr);
-        return `<tr>
-            <td>${fmtDate(r.date)}</td>
-            <td>${r.vou || '-'}</td>
-            <td>${r.mem} <small style="display:block; color:var(--text-muted);">${r.being}</small></td>
-            <td style="color:var(--success)">${r.dr > 0 ? '₹'+r.dr.toFixed(2) : '-'}</td>
-            <td style="color:var(--danger)">${r.cr > 0 ? '₹'+r.cr.toFixed(2) : '-'}</td>
-            <td><b>₹${run.toFixed(2)}</b></td>
-        </tr>`;
-    }).join('');
-
-    return `
-        <div style="border: 1px solid var(--border); border-radius:8px; padding:15px; background:white;">
-            <h4 style="margin-top:0; color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:5px;">📂 HEAD: ${title.toUpperCase()}</h4>
-            <div class="table-container">
-                <table>
-                    <thead><tr><th>Date</th><th>Voucher</th><th>Particulars</th><th>Debit (In)</th><th>Credit (Out)</th><th>Running Cumulative</th></tr></thead>
-                    <tbody>${rows || '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No entries booked.</td></tr>'}</tbody>
-                </table>
-            </div>
-        </div>
-    `;
+    if (h === '') h = `<div class="card" style="text-align:center; color:var(--text-muted)">No transactions found in any active ledger.</div>`;
+    document.getElementById('ledgerOutput').innerHTML = h;
 }
 
 function renderTrial() {
-    let summary = {};
-    config.cats.forEach(c => summary[c] = { dr: 0, cr: 0 });
-    
-    records.forEach(r => {
-        if(summary[r.cat]) {
-            summary[r.cat].dr += r.dr;
-            summary[r.cat].cr += r.cr;
-        }
-    });
-
-    let tDr = 0, tCr = 0;
-    let rows = Object.keys(summary).map(head => {
-        let net = summary[head].dr - summary[head].cr;
-        let dDisp = net > 0 ? '₹'+net.toFixed(2) : '-';
-        let cDisp = net < 0 ? '₹'+Math.abs(net).toFixed(2) : '-';
-        
-        if(net > 0) tDr += net;
-        if(net < 0) tCr += Math.abs(net);
-
-        return `<tr><td><b>${head}</b></td><td>${dDisp}</td><td>${cDisp}</td></tr>`;
-    }).join('');
-
-    document.getElementById('trialOutput').innerHTML = `
-        <div class="table-container">
-            <table id="tblTrial">
-                <thead><tr><th>Account Classification Head</th><th>Debit Balance (₹)</th><th>Credit Balance (₹)</th></tr></thead>
-                <tbody>
-                    ${rows}
-                    <tr style="background:#f1f5f9; font-weight:800; border-top:2px solid var(--primary);">
-                        <td>TOTAL SUMMATION</td><td>₹${tDr.toFixed(2)}</td><td>₹${tCr.toFixed(2)}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    `;
+    let m = {}; let td=0, tc=0;
+    records.forEach(r => { if(!m[r.cat]) m[r.cat]={dr:0,cr:0}; m[r.cat].dr+=r.dr; m[r.cat].cr+=r.cr; });
+    let h = `<table id="tblTrial"><thead><tr><th>Account Head</th><th>Dr (Inflow)</th><th>Cr (Outflow)</th></tr></thead><tbody>`;
+    for(let k in m) { h += `<tr><td>${k}</td><td>₹${m[k].dr.toFixed(2)}</td><td>₹${m[k].cr.toFixed(2)}</td></tr>`; td+=m[k].dr; tc+=m[k].cr; }
+    h += `<tr style="background:#fef2f2; font-weight:700; color:var(--danger);"><td>CASH IN HAND (BALANCE)</td><td>-</td><td>₹${(td-tc).toFixed(2)}</td></tr><tr style="background:#ecfdf5; font-weight:700;"><td>GRAND TOTAL</td><td>₹${td.toFixed(2)}</td><td>₹${td.toFixed(2)}</td></tr></tbody></table>`;
+    document.getElementById('trialOutput').innerHTML = h;
 }
 
 function renderSummary() {
-    let receipts = 0, payments = 0;
-    let breakdownRec = {}, breakdownPay = {};
+    let rm = {}, pm = {}, td=0, tc=0;
+    records.forEach(r => { if(r.dr>0){ rm[r.cat]=(rm[r.cat]||0)+r.dr; td+=r.dr; } else { pm[r.cat]=(pm[r.cat]||0)+r.cr; tc+=r.cr; } });
+    let h = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:15px;"><div><h4 style="color:var(--success)">TOTAL RECEIPTS</h4><table>`;
+    for(let c in rm) h += `<tr><td>${c}</td><td>₹${rm[c].toFixed(2)}</td></tr>`;
+    h += `<tr style="font-weight:700"><td>Total Inflow</td><td>₹${td.toFixed(2)}</td></tr></table></div><div><h4 style="color:var(--danger)">TOTAL PAYMENTS</h4><table>`;
+    for(let c in pm) h += `<tr><td>${c}</td><td>₹${pm[c].toFixed(2)}</td></tr>`;
+    h += `<tr style="color:var(--danger)"><td>CASH IN HAND</td><td>₹${(td-tc).toFixed(2)}</td></tr><tr style="font-weight:700"><td>Total Outflow</td><td>₹${td.toFixed(2)}</td></tr></table></div></div>`;
+    document.getElementById('summaryOutput').innerHTML = h;
+}
 
-    records.forEach(r => {
-        if(r.dr > 0) {
-            receipts += r.dr;
-            breakdownRec[r.cat] = (breakdownRec[r.cat] || 0) + r.dr;
-        }
-        if(r.cr > 0) {
-            payments += r.cr;
-            breakdownPay[r.cat] = (breakdownPay[r.cat] || 0) + r.cr;
-        }
-    });
-
-    let recRows = Object.keys(breakdownRec).map(k => `<div><span>• ${k}</span><b>₹${breakdownRec[k].toFixed(2)}</b></div>`).join('');
-    let payRows = Object.keys(breakdownPay).map(k => `<div><span>• ${k}</span><b>₹${breakdownPay[k].toFixed(2)}</b></div>`).join('');
-
-    document.getElementById('summaryOutput').innerHTML = `
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-            <div style="background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
-                <h4 style="margin:0; color:var(--success);">📥 TOTAL CASH INFLOWS</h4>
-                <div style="font-size:24px; font-weight:800; margin:10px 0; color:var(--success)">₹${receipts.toFixed(2)}</div>
-                <div style="font-size:12px; border-top:1px dashed #bbf7d0; padding-top:10px; display:flex; flex-direction:column; gap:5px;">${recRows || 'No inflows recorded'}</div>
-            </div>
-            <div style="background:#fef2f2; padding:15px; border-radius:8px; border:1px solid #fecaca;">
-                <h4 style="margin:0; color:var(--danger);">📤 TOTAL CASH OUTFLOWS</h4>
-                <div style="font-size:24px; font-weight:800; margin:10px 0; color:var(--danger)">₹${payments.toFixed(2)}</div>
-                <div style="font-size:12px; border-top:1px dashed #fecaca; padding-top:10px; display:flex; flex-direction:column; gap:5px;">${payRows || 'No outflows recorded'}</div>
-            </div>
-        </div>
-    `;
+function switchAdminTab(id, el) {
+    document.querySelectorAll('.admin-panel').forEach(d => d.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.admin-tab').forEach(d => d.classList.remove('active'));
+    el.classList.add('active');
 }
 
 function loadAdmin() {
-    switchAdminTab('admGeneral', document.querySelector('.admin-tab'));
     document.getElementById('admClub').value = config.club;
     document.getElementById('admPassA').value = config.passA;
     document.getElementById('admSigA').value = config.sigA;
     document.getElementById('admSigT').value = config.sigT;
     document.getElementById('admSigS').value = config.sigS;
-
-    renderAdminCats();
-    renderAdminUsers();
-    renderAdminDocTable();
-
-    document.getElementById('lhDate').innerText = fmtDate(new Date().toISOString().split('T')[0]);
-    document.getElementById('lhSigAuth').innerText = config.sigA || "Authorized Signatory";
+    
     document.getElementById('lhClubName').innerText = config.club;
-}
+    document.getElementById('lhSigAuth').innerText = config.sigA;
 
-function switchAdminTab(panelId, tabEl) {
-    document.querySelectorAll('.admin-panel').forEach(p => p.classList.add('hidden'));
-    document.getElementById(panelId).classList.remove('hidden');
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    tabEl.classList.add('active');
-}
-
-function renderAdminCats() {
-    const list = document.getElementById('admCatList');
-    list.innerHTML = config.cats.map((c, i) => `
-        <div style="display:inline-flex; align-items:center; background:#f1f5f9; border:1px solid var(--border); padding:4px 10px; border-radius:20px; margin:4px;">
-            <span style="font-size:12px; font-weight:600; margin-right:8px;">${c}</span>
-            <span onclick="removeCfg('cats', ${i})" style="color:var(--danger); cursor:pointer; font-weight:800;">×</span>
-        </div>
-    `).join('');
-}
-
-function addCfg(key, inputId) {
-    const inp = document.getElementById(inputId);
-    const v = inp.value.trim();
-    if(v && !config[key].includes(v)) {
-        config[key].push(v);
-        inp.value = '';
-        renderAdminCats();
-    }
-}
-
-function removeCfg(key, idx) {
-    config[key].splice(idx, 1);
-    renderAdminCats();
+    document.getElementById('admCatList').innerHTML = config.cats.map((c,i)=>`<span class="badge">${c} <button onclick="remCfg('cats',${i})" style="border:0; background:transparent; color:red; font-weight:bold; cursor:pointer;">×</button></span>`).join(' ');
+    renderAdminUsers();
+    renderAdminDocs();
 }
 
 function saveAdminGeneral() {
-    config.club = document.getElementById('admClub').value.trim() || config.club;
-    config.passA = document.getElementById('admPassA').value.trim() || config.passA;
-    config.sigA = document.getElementById('admSigA').value.trim();
-    config.sigT = document.getElementById('admSigT').value.trim();
-    config.sigS = document.getElementById('admSigS').value.trim();
+    config.club = document.getElementById('admClub').value;
+    config.passA = document.getElementById('admPassA').value;
+    config.sigA = document.getElementById('admSigA').value; 
+    config.sigT = document.getElementById('admSigT').value; 
+    config.sigS = document.getElementById('admSigS').value;
+    CLOUD.set('njs_cfg_v16', JSON.stringify(config)); 
+    document.getElementById('dispClub').innerText = config.club;
+    sysAlert("General Configuration Synced to Cloud Successfully!"); 
+}
 
-    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-    sysAlert("System master changes completely committed and saved securely to Cloud.");
-    loadAdmin();
+function backupData() {
+    const data = { config, documents, db: {} };
+    config.sessions.forEach(s => data.db[s] = JSON.parse(CLOUD.get('njs_db_'+s) || '[]'));
+    const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'NJS_Cloud_Backup.json'; a.click();
+}
+
+function restoreData(e) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        const data = JSON.parse(ev.target.result);
+        CLOUD.data['njs_cfg_v16'] = JSON.stringify(data.config);
+        CLOUD.data['njs_docs_v16'] = JSON.stringify(data.documents);
+        for(let s in data.db) CLOUD.data['njs_db_'+s] = JSON.stringify(data.db[s]);
+        
+        CLOUD.sync().then(() => {
+            sysAlert("Cloud Restore complete. Please refresh to load data.");
+        });
+    };
+    reader.readAsText(e.target.files[0]);
+}
+
+function addCfg(k, id) { 
+    const v = document.getElementById(id).value.trim(); 
+    if(v && !config[k].includes(v)){ 
+        config[k].push(v); document.getElementById(id).value=""; 
+        loadAdmin(); updateDrops(); 
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+    }
+}
+
+function remCfg(k, i) { 
+    sysConfirm("Delete this configuration?", () => {
+        config[k].splice(i,1); 
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        loadAdmin(); updateDrops(); 
+    });
 }
 
 function renderAdminUsers() {
-    const body = document.getElementById('userListBody');
-    body.innerHTML = config.users.map((u, i) => `
-        <tr>
-            <td><b>${u.name}</b></td>
-            <td><code>${u.key}</code></td>
+    let h = '';
+    config.users.forEach((u, i) => {
+        h += `<tr>
+            <td>${u.name}</td><td><code style="background:#e2e8f0; padding:2px 6px; border-radius:4px;">${u.key}</code></td>
             <td>${u.validTill}</td>
-            <td><button onclick="deleteUser(${i})" class="btn btn-danger" style="padding:2px 6px; font-size:11px;">Erase</button></td>
-        </tr>
-    `).join('');
+            <td>
+                <button onclick="editUser(${i})" class="btn btn-warn" style="padding:4px 8px; font-size:11px;">✎</button>
+                <button onclick="delUser(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">×</button>
+            </td>
+        </tr>`;
+    });
+    document.getElementById('userListBody').innerHTML = h;
 }
 
 function openUserForm() {
     document.getElementById('userEditForm').classList.remove('hidden');
-    document.getElementById('uName').value = '';
+    document.getElementById('editUserIdx').value = "-1";
+    document.getElementById('uName').value = "";
     document.getElementById('uKey').value = Math.random().toString(36).substring(2,8).toUpperCase();
-    document.getElementById('uValid').value = '12/2026';
+    document.getElementById('uValid').value = "12/2026";
+    document.getElementById('userFormTitle').innerText = "Add New Member";
+}
+
+function editUser(i) {
+    const u = config.users[i];
+    document.getElementById('userEditForm').classList.remove('hidden');
+    document.getElementById('editUserIdx').value = i;
+    document.getElementById('uName').value = u.name;
+    document.getElementById('uKey').value = u.key;
+    document.getElementById('uValid').value = u.validTill;
+    document.getElementById('userFormTitle').innerText = "Edit Member Profile";
 }
 
 function saveUser() {
-    const name = document.getElementById('uName').value.trim();
-    const key = document.getElementById('uKey').value.trim().toUpperCase();
-    const validTill = document.getElementById('uValid').value.trim();
-
-    if(!name || key.length !== 6) {
-        sysAlert("Check credentials. Members require explicit names and a unique 6-digit key.");
-        return;
-    }
-
-    config.users.push({ name, key, validTill, role: 'member' });
+    const idx = parseInt(document.getElementById('editUserIdx').value);
+    const uName = document.getElementById('uName').value.trim();
+    if(!uName) return sysAlert("Member name is required.");
+    
+    const obj = {
+        name: uName,
+        key: document.getElementById('uKey').value.toUpperCase(),
+        validTill: document.getElementById('uValid').value,
+        role: 'member'
+    };
+    
+    if(idx === -1) config.users.push(obj);
+    else config.users[idx] = obj;
+    
     CLOUD.set('njs_cfg_v16', JSON.stringify(config));
     document.getElementById('userEditForm').classList.add('hidden');
-    loadAdmin();
-    initLoginSelects();
+    renderAdminUsers();
+    updateDrops();
 }
 
-function deleteUser(i) {
-    sysConfirm("Permanently kick out and erase authorization parameters for this club member profile?", () => {
-        config.users.splice(i, 1);
+function delUser(i) {
+    sysConfirm(`Delete member ${config.users[i].name}?`, () => {
+        config.users.splice(i,1);
         CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-        loadAdmin();
-        initLoginSelects();
+        renderAdminUsers();
     });
 }
 
 function uploadDoc() {
-    const fEl = document.getElementById('upDocFile');
-    const file = fEl.files[0];
-    const name = document.getElementById('upDocName').value.trim();
     const sess = document.getElementById('upDocSess').value;
+    const name = document.getElementById('upDocName').value.trim();
+    const fileInp = document.getElementById('upDocFile');
+    
+    if(!name || !fileInp.files.length) return sysAlert("Please provide document name and select a PDF file.");
+    
+    const file = fileInp.files[0];
+    if(file.size > 2 * 1024 * 1024) return sysAlert("File is too large. Cloud limit is 2MB per file.");
 
-    if(!file || !name) {
-        sysAlert("Please specify the document file boundary and report descriptive name.");
-        return;
-    }
-
-    const r = new FileReader();
-    r.onload = function(e) {
-        documents.push({
-            sess, name,
-            base64: e.target.result
-        });
-        CLOUD.set('njs_docs', JSON.stringify(documents));
-        sysAlert("PDF report bounded and compiled with cloud records successfully!");
-        fEl.value = '';
-        document.getElementById('upDocName').value = '';
-        loadAdmin();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            documents.push({ id: Date.now(), sess: sess, name: name, dataUrl: e.target.result });
+            CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+            sysAlert("Document successfully uploaded to Cloud and bound to session " + sess);
+            document.getElementById('upDocName').value = "";
+            fileInp.value = "";
+            renderAdminDocs();
+        } catch(err) {
+            sysAlert("Storage Limit Reached. Cannot save large file.", "Error");
+        }
     };
-    r.readAsDataURL(file);
+    reader.readAsDataURL(file);
 }
 
-function renderAdminDocTable() {
-    const b = document.getElementById('upDocList');
-    b.innerHTML = documents.map((d, i) => `
-        <tr>
-            <td><span class="badge">${d.sess}</span></td>
-            <td><b>${d.name}</b></td>
-            <td><button onclick="deleteDoc(${i})" class="btn btn-danger" style="padding:2px 6px; font-size:11px;">Erase</button></td>
-        </tr>
-    `).join('');
+function renderAdminDocs() {
+    let h = '';
+    documents.forEach((d, i) => {
+        h += `<tr><td>${d.sess}</td><td>${d.name}</td><td><button onclick="delDoc(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">🗑 Delete</button></td></tr>`;
+    });
+    document.getElementById('upDocList').innerHTML = h;
 }
 
-function deleteDoc(i) {
-    sysConfirm("Erase this uploaded PDF binder completely from database systems?", () => {
-        documents.splice(i, 1);
-        CLOUD.set('njs_docs', JSON.stringify(documents));
-        loadAdmin();
+function delDoc(i) {
+    sysConfirm("Delete this document from Cloud?", () => {
+        documents.splice(i,1);
+        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+        renderAdminDocs();
     });
 }
 
 function renderDocGallery() {
-    const s = document.getElementById('docViewSess').value;
-    const g = document.getElementById('docGallery');
-    g.innerHTML = '';
-
-    let matches = documents.filter(d => d.sess === s);
-    matches.forEach(d => {
-        let card = document.createElement('div');
-        card.className = "doc-card";
-        card.innerHTML = `
-            <div style="font-size:24px;">📕</div>
-            <div style="font-weight:600; font-size:13px; margin-bottom:10px; flex:1;">${d.name}</div>
-            <button onclick="openPDF('${d.base64}')" class="btn btn-primary" style="padding:5px; font-size:11px; width:100%;">View Document</button>
-        `;
-        g.appendChild(card);
-    });
-
-    if(matches.length === 0) {
-        g.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px; color:var(--text-muted);">No active official files or circular attachments linked to Session ${s}.</div>`;
+    const filter = document.getElementById('docViewSess').value;
+    let viewDocs = documents;
+    if(filter !== 'ALL') viewDocs = documents.filter(d => d.sess === filter);
+    
+    let h = '';
+    if(viewDocs.length === 0) {
+        h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available for the selected criteria.</div>`;
+    } else {
+        viewDocs.forEach(d => {
+            h += `<div class="doc-card">
+                <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
+                <div style="font-weight: 600;">${d.name}</div>
+                <a href="${d.dataUrl}" download="${d.name.replace(/\s+/g,'_')}.pdf" target="_blank" class="btn btn-ghost" style="text-decoration:none; margin-top: auto;">👁 View / Download</a>
+            </div>`;
+        });
     }
-}
-
-function openPDF(b64) {
-    const w = window.open();
-    w.document.write(`<iframe src="${b64}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
-}
-
-function backupData() {
-    let packageObj = {
-        config: config,
-        all_txns: {},
-        documents: documents
-    };
-    config.sessions.forEach(s => {
-        packageObj.all_txns[s] = CLOUD.get('njs_txns_' + s) || '[]';
-    });
-
-    const str = JSON.stringify(packageObj);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(str);
-    const a = document.createElement('a');
-    a.href = dataUri;
-    a.download = `NJS_CloudLedger_Backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-}
-
-function restoreData(e) {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        try {
-            const parsed = JSON.parse(evt.target.result);
-            if(parsed.config && parsed.documents) {
-                config = parsed.config;
-                documents = parsed.documents;
-                CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-                CLOUD.set('njs_docs', JSON.stringify(documents));
-
-                if(parsed.all_txns) {
-                    Object.keys(parsed.all_txns).forEach(s => {
-                        CLOUD.set('njs_txns_' + s, parsed.all_txns[s]);
-                    });
-                }
-                sysAlert("System database restored from local array map. Core systems resetting now.");
-                setTimeout(() => { location.reload(); }, 1500);
-            }
-        } catch(err) {
-            sysAlert("Corrupt file structural configuration map. Restore dropped.");
-        }
-    };
-    reader.readAsText(file);
-}
-
-// --- WIPE OUT STATE AND FORCE HARD BREAK ---
-function wipeData() {
-    sysConfirm("CRITICAL WARNING: This completely wipes out ALL runtime memory data arrays for the active session, logging you out completely. Proceed?", () => {
-        // Drop Cloud Keys for current window scope
-        CLOUD.set('njs_txns_' + curSess, '[]');
-        
-        // Instant hard flush context variables
-        records = [];
-        sessionStorage.clear();
-        currentUserObj = null;
-        
-        sysAlert("Active session memory wiped out. Refreshing platform system structures...");
-        
-        setTimeout(() => {
-            // Force browser window context reload instantly with completely cleared state
-            location.replace(location.href.split('#')[0]);
-        }, 1200);
-    });
+    document.getElementById('docGallery').innerHTML = h;
 }
 
 function importExcel(e) {
     const file = e.target.files[0];
     if(!file) return;
-
     const reader = new FileReader();
-    reader.onload = function(evt) {
+    reader.onload = (ev) => {
         try {
-            const data = new Uint8Array(evt.target.result);
-            const wb = XLSX.read(data, {type: 'array', cellDates: true});
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            const rawRows = XLSX.utils.sheet_to_json(ws, {defval:""});
-
-            rawRows.forEach(x => {
+            const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
+            const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            
+            data.forEach(x => {
                 let finalDate = new Date().toISOString().split('T')[0];
                 if (x.Date) {
-                    let dObj = new Date(x.Date);
-                    if(!isNaN(dObj.getTime())) finalDate = dObj.toISOString().split('T')[0];
+                    let d = String(x.Date).trim();
+                    if (d.includes('/')) {
+                        let p = d.split('/');
+                        if(p.length === 3) finalDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+                    } else if (d.includes('-')) {
+                        finalDate = d;
+                    } else if (!isNaN(d)) {
+                        let jsDate = new Date(Math.round((Number(d) - 25569) * 86400 * 1000));
+                        if(!isNaN(jsDate)) finalDate = jsDate.toISOString().split('T')[0];
+                    }
                 }
 
-                let parsedCat = x.Category || "Miscellaneous";
-                if(!config.cats.includes(parsedCat)) {
+                let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
+                if(parsedCat && !config.cats.includes(parsedCat)) {
                     config.cats.push(parsedCat);
-                    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config);
                 }
 
                 const cleanAmt = (val) => {
@@ -885,7 +1103,6 @@ function importExcel(e) {
                     being: x.Narration || x.Being || ""
                 });
             });
-            CLOUD.set('njs_txns_' + curSess, JSON.stringify(records));
             refresh(); 
             sysAlert("Batch Excel Import Synced to Cloud Successfully!");
         } catch(err) {
@@ -901,7 +1118,7 @@ function exportTable(id, name) {
     const table = document.getElementById(id);
     const ws = XLSX.utils.table_to_sheet(table);
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-    XLSX.writeFile(wb, `${name}_Session_${curSess}.xlsx`);
+    XLSX.writeFile(wb, `${name}_${curSess}.xlsx`);
 }
 </script>
 </body>
