@@ -556,11 +556,12 @@ window.onload = async () => {
     
     if (rawCfg) {
     config = JSON.parse(rawCfg);
-
-    // Ensure sessions array exists
-    if (!Array.isArray(config.sessions)) {
-        config.sessions = ['2023-24', '2024-25'];
-    }
+    
+    // PERMANENT FIX: Force ensure both historical sessions are explicitly registered
+    if (!config.sessions) config.sessions = [];
+    if (!config.sessions.includes('2023-24')) config.sessions.push('2023-24');
+    if (!config.sessions.includes('2024-25')) config.sessions.push('2024-25');
+}
 } else {
     config = {
         club: 'Garfa Nobojyoti Sangha',
