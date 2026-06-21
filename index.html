@@ -29,8 +29,6 @@
         .container { max-width: 1250px; margin: 0 auto; padding: 15px; }
         .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
 
-        .banner-img { width: 100%; max-width: 800px; display: block; margin: 0 auto 20px auto; border-radius: 8px; }
-
         .control-bar { display: flex; flex-wrap: wrap; gap: 10px; background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px; align-items: center; border: 1px solid var(--border); }
         .tool-group { display: flex; align-items: center; gap: 8px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
 
@@ -124,7 +122,7 @@
                 <select id="pubLoginSelect"></select>
                 
                 <label>Access Key</label>
-                <input type="password" id="pubLoginKey" placeholder="Enter 6-digit key (e.g. A7K9P2)">
+                <input type="password" id="pubLoginKey" placeholder="Enter 6-digit key">
             </div>
             
             <button onclick="loginMember()" class="btn btn-primary" style="width:100%; margin-top:25px; padding:12px; font-size: 14px;">SECURE LOGIN</button>
@@ -152,7 +150,7 @@
         <div id="dispClub" style="font-weight:800; font-size: 1.2rem; letter-spacing: -0.5px;"></div>
         <div id="dispUser" style="font-size:11px; opacity: 0.9; margin-top: 2px;"></div>
     </div>
-    <button onclick="CLOUD.set('njs_login_state', null).then(() => location.reload())" class="btn btn-ghost" style="padding: 6px 12px; color: var(--primary); border: none;">LOGOUT</button>
+    <button onclick="logoutSession()" class="btn btn-ghost" style="padding: 6px 12px; color: var(--primary); border: none;">LOGOUT</button>
 </header>
 
 <div class="container hidden" id="appContainer">
@@ -254,7 +252,7 @@
 
     <div id="adminSection" class="app-section hidden admin-only">
         <div class="card" style="padding-bottom: 0;">
-            <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
+	        <h3 style="margin-top:0; color: var(--primary); margin-bottom: 20px;">Administrator Console</h3>
             <div class="admin-tabs">
                 <div class="admin-tab active" onclick="switchAdminTab('admGeneral', this)">General Settings</div>
                 <div class="admin-tab" onclick="switchAdminTab('admUsers', this)">Password & Members</div>
@@ -398,7 +396,7 @@
         <span class="nav-icon">📂</span> Documents
     </div>
     <div class="nav-item admin-only" id="navAdmin" onclick="showAppSection('adminSection'); loadAdmin()">
-        <span class="nav-icon">⚙️</span> Admin
+        <span class="nav-icon">⚙</span> Admin
     </div>
 </nav>
 
@@ -422,7 +420,7 @@ function resolveConfirm(res) {
     confirmCallback = null;
 }
 
-// --- Cloud Storage Adapter (JSONBin.io) with Anti-Cache Bypass ---
+// --- Cloud Storage Adapter (JSONBin.io) ---
 const CLOUD = {
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
     ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
@@ -431,33 +429,23 @@ const CLOUD = {
 
     async init() {
         const loader = document.createElement('div');
-        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Live Cloud Hub...</div>';
+        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;font-weight:600;color:#881337;">Connecting Cloud Ledger...</div>';
         document.body.appendChild(loader);
 
         try {
-            // FIX: Append Timestamp hash to bypass edge CDN caching issues on secondary devices completely
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest?_=${Date.now()}`, {
-                headers: {
-                    "X-Master-Key": this.API_KEY,
-                    "X-Access-Key": this.ACCESS_KEY
-                }
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
+                headers: { "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY }
             });
             const json = await res.json();
             this.data = json.record || {};
         } catch(e) {
-            sysAlert("Cloud initialization failed. Working from local cached variables.");
+            sysAlert("Cloud sync server connection failed.");
         }
         document.body.removeChild(loader);
     },
 
-    get(key) {
-        return this.data[key] || null;
-    },
-
-    async set(key, val) {
-        this.data[key] = val;
-        await this.sync();
-    },
+    get(key) { return this.data[key] || null; },
+    set(key, val) { this.data[key] = val; this.sync(); },
 
     async sync() {
         try {
@@ -471,12 +459,11 @@ const CLOUD = {
                 body: JSON.stringify(this.data)
             });
         } catch(e) {
-            console.error("Cloud synchronization mismatch error:", e);
+            console.error("Cloud storage sync failure:", e);
         }
     }
 };
 
-// --- Data Models & State ---
 let curSess, config, records, documents, currentUserObj;
 
 const staticBannerHTML = `
@@ -516,17 +503,14 @@ const staticBannerHTML = `
 
 function fmtDate(dStr) {
     if(!dStr) return '-';
-    const str = String(dStr);
-    const parts = str.split('-');
+    const parts = String(dStr).split('-');
     if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    return str;
+    return dStr;
 }
 
-// --- Initialization & Auth Flow ---
 window.onload = async () => {
     await CLOUD.init();
-    
-    currentUserObj = JSON.parse(CLOUD.get("njs_login_state") || "null");
+
     curSess = CLOUD.get('njs_active_sess') || '2024-25';
     let rawCfg = CLOUD.get('njs_cfg_v16');
     
@@ -552,26 +536,23 @@ window.onload = async () => {
                 { name: 'Arun Ghosh', key: 'B8C9D0', validTill: '11/2025', role: 'member' },
                 { name: 'Deb Kumar Deb', key: 'E1F2G3', validTill: '06/2026', role: 'member' },
                 { name: 'Chandan Sengupta', key: 'H4I5J6', validTill: '08/2025', role: 'member' },
-                { name: 'Bijoy Paul', key: 'K7L8M9', validTill: '03/2025', role: 'member' },
-                { name: 'Chanchal Sarkar', key: 'N0O1P2', validTill: '04/2025', role: 'member' },
-                { name: 'Anal Sharma Roy', key: 'Q3R4S5', validTill: '02/2025', role: 'member' },
-                { name: 'Samar Saha', key: 'T6U7V8', validTill: '04/2024', role: 'member' },
-                { name: 'Sushanta Sarkar', key: 'W9X0Y1', validTill: '01/2026', role: 'member' },
-                { name: 'Rajib Saha', key: 'Z2A3B4', validTill: '12/2025', role: 'member' },
-                { name: 'Goutam Paul', key: 'C5D6E7', validTill: '12/2025', role: 'member' },
-                { name: 'Joy Mukherjee', key: 'F8G9H0', validTill: '08/2025', role: 'member' },
-                { name: 'Amit Thakur', key: 'I1J2K3', validTill: '08/2025', role: 'member' },
-                { name: 'Gora Mondal', key: 'L4M5N6', validTill: '06/2025', role: 'member' },
-                { name: 'Shyamal Das', key: 'O7P8Q9', validTill: '04/2025', role: 'member' },
-                { name: 'Barun Deb', key: 'R0S1T2', validTill: '12/2025', role: 'member' },
-                { name: 'Tamal Das', key: 'U3V4W5', validTill: '10/2024', role: 'member' },
-                { name: 'Kartik Dutta', key: 'X6Y7Z8', validTill: '03/2024', role: 'member' }
+                { name: 'Sushanta Sarkar', key: 'W9X0Y1', validTill: '01/2026', role: 'member' }
             ]
         };
-        await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
     }
 
     documents = JSON.parse(CLOUD.get('njs_docs_v16') || "[]");
+    
+    // Fixed Session Checking Logic
+    const savedState = CLOUD.get("njs_login_state");
+    if(savedState) {
+        currentUserObj = JSON.parse(savedState);
+        finalizeLogin();
+    } else {
+        currentUserObj = null;
+        showLoginScreen();
+    }
 
     document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
     document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
@@ -579,13 +560,16 @@ window.onload = async () => {
     let opts = '<option value="">-- Select Profile --</option>';
     config.users.forEach(u => opts += `<option value="${u.name}">${u.name}</option>`);
     document.getElementById('pubLoginSelect').innerHTML = opts;
-    
     document.getElementById('lhDate').innerText = fmtDate(new Date().toISOString().split('T')[0]);
-
-    if(currentUserObj) {
-        finalizeLogin();
-    }
 };
+
+function showLoginScreen() {
+    document.getElementById('publicHomepage').classList.remove('hidden');
+    document.getElementById('mainHeader').classList.add('hidden');
+    document.getElementById('appContainer').classList.add('hidden');
+    document.getElementById('mobileNav').classList.add('hidden');
+    showMemberLogin();
+}
 
 function showAdminLogin() {
     document.getElementById('memberLoginCard').classList.add('hidden');
@@ -601,6 +585,7 @@ function loginAdmin() {
     const p = document.getElementById('admLoginPass').value;
     if(p === config.passA) {
         currentUserObj = { name: 'Administrator', role: 'admin' };
+        CLOUD.set("njs_login_state", JSON.stringify(currentUserObj));
         finalizeLogin();
     } else {
         sysAlert("Invalid Master Password", "Access Denied");
@@ -616,18 +601,25 @@ function loginMember() {
     const u = config.users.find(x => x.name === sel);
     if(u && u.key === key) {
         currentUserObj = u;
+        CLOUD.set("njs_login_state", JSON.stringify(currentUserObj));
         finalizeLogin();
         setTimeout(() => {
-            sysAlert(`Your Club Membership Has been Updated Till ${u.validTill}`, "Login Successful");
-        }, 500);
+            sysAlert(`Membership Valid Till ${u.validTill}`, "Login Successful");
+        }, 400);
     } else {
-        sysAlert("Invalid Access Key. Please check and try again.", "Authentication Failed");
+        sysAlert("Invalid Access Key.", "Authentication Failed");
     }
 }
 
-function finalizeLogin() {
-    CLOUD.set("njs_login_state", JSON.stringify(currentUserObj));
+function logoutSession() {
+    currentUserObj = null;
+    CLOUD.set("njs_login_state", null);
+    document.getElementById('pubLoginKey').value = "";
+    document.getElementById('admLoginPass').value = "";
+    showLoginScreen();
+}
 
+function finalizeLogin() {
     document.getElementById('publicHomepage').classList.add('hidden');
     document.getElementById('mainHeader').classList.remove('hidden');
     document.getElementById('appContainer').classList.remove('hidden');
@@ -642,37 +634,30 @@ function finalizeLogin() {
         else el.classList.add('hidden');
     });
     
-    if(!isAdmin) {
-        document.querySelectorAll('.admin-only-cell').forEach(el => el.style.display = 'none');
-    }
+    document.querySelectorAll('.admin-only-cell').forEach(el => {
+        el.style.display = isAdmin ? '' : 'none';
+    });
 
     loadRecordsForSession();
     updateDrops();
     showAppSection('dashboard');
 }
 
-// --- Navigation & Core Views ---
 function showAppSection(id) {
     document.querySelectorAll('.app-section').forEach(d => d.classList.add('hidden'));
     document.getElementById(id).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(d => d.classList.remove('active'));
 
     const navMap = {
-        dashboard: 'navJournal',
-        entrySection: 'navEntry',
-        ledgerSection: 'navLedger',
-        trialSection: 'navReports',
-        docSection: 'navDocs',
-        adminSection: 'navAdmin'
+        dashboard:'navJournal', entrySection:'navEntry', ledgerSection:'navLedger',
+        trialSection:'navReports', docSection:'navDocs', adminSection:'navAdmin'
     };
-
     if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
 }
 
-async function switchSession(v) { 
+function switchSession(v) { 
     curSess = v; 
-    await CLOUD.set('njs_active_sess', v); 
-    
+    CLOUD.set('njs_active_sess', v); 
     loadRecordsForSession();
     updateDrops();
     
@@ -682,15 +667,15 @@ async function switchSession(v) {
     if(!document.getElementById('docSection').classList.contains('hidden')) renderDocGallery();
 }
 
-async function promptNewSession() {
-    const s = prompt("Enter Name for the new Session (e.g. 2026-27 or Annual Event):");
+function promptNewSession() {
+    const s = prompt("Enter Name for the new Session:");
     if(s && s.trim() !== '') {
         const clean = s.trim();
         if(!config.sessions.includes(clean)) {
             config.sessions.push(clean);
-            await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+            CLOUD.set('njs_cfg_v16', JSON.stringify(config));
         }
-        await switchSession(clean);
+        switchSession(clean);
     }
 }
 
@@ -700,18 +685,13 @@ function loadRecordsForSession() {
 }
 
 function refresh() {
-    records.sort((a,b) => {
-        let da = new Date(a.date).getTime() || 0;
-        let db = new Date(b.date).getTime() || 0;
-        return da - db;
-    });
+    records.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     let bal = 0, h = '', totalDr = 0, totalCr = 0;
     const isAdmin = currentUserObj && currentUserObj.role === 'admin';
 
     records.forEach((r, i) => {
-        r.dr = parseFloat(String(r.dr).replace(/[^0-9.-]+/g,"")) || 0;
-        r.cr = parseFloat(String(r.cr).replace(/[^0-9.-]+/g,"")) || 0;
-
+        r.dr = parseFloat(r.dr) || 0;
+        r.cr = parseFloat(r.cr) || 0;
         bal = parseFloat((bal + r.dr - r.cr).toFixed(2));
         totalDr = parseFloat((totalDr + r.dr).toFixed(2));
         totalCr = parseFloat((totalCr + r.cr).toFixed(2));
@@ -722,10 +702,10 @@ function refresh() {
         h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou||'-'}</td><td>${r.mem}</td><td>${r.cat}</td>
         <td style="color:var(--success); font-weight:600">₹${r.dr}</td><td style="color:var(--danger); font-weight:600">₹${r.cr}</td>
         <td style="color:${balColor}; font-weight:700">${balStr}</td>
-        <td class="no-print" style="white-space:nowrap;">
-            <button onclick="printV(${i})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;" title="Print">⎙</button>
-            <button onclick="editRec(${i})" class="btn btn-warn ${isAdmin?'':'hidden'}" style="padding:4px 8px; font-size:11px;" title="Edit">✎</button>
-            <button onclick="delRec(${i})" class="btn btn-danger ${isAdmin?'':'hidden'}" style="padding:4px 8px; font-size:11px;" title="Delete">×</button>
+        <td class="no-print admin-only-cell" style="white-space:nowrap; display:${isAdmin?'':'none'};">
+            <button onclick="printV(${i})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;">⎙</button>
+            <button onclick="editRec(${i})" class="btn btn-warn" style="padding:4px 8px; font-size:11px;">✎</button>
+            <button onclick="delRec(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">×</button>
         </td></tr>`;
     });
     
@@ -734,7 +714,7 @@ function refresh() {
         <td style="color:var(--success);">₹${totalDr}</td>
         <td style="color:var(--danger);">₹${totalCr}</td>
         <td style="color:${bal >= 0 ? 'var(--success)' : 'var(--danger)'};">₹${bal >= 0 ? bal : '-'+Math.abs(bal)}</td>
-        <td class="no-print" style="${!isAdmin ? 'display:none;' : ''}"></td>
+        <td class="no-print admin-only-cell" style="display:${isAdmin?'':'none'}"></td>
     </tr>`;
 
     document.getElementById('txnBody').innerHTML = h;
@@ -748,7 +728,7 @@ function genAI() {
     document.getElementById('tBeing').value = `Being the amount ${action} ${m} on account of ${c} vide ${doc} No. ${v} amounting to Rs. ${a}/-.`;
 }
 
-async function saveTxn() {
+function saveTxn() {
     const idx = parseInt(document.getElementById('editIdx').value);
     const data = {
         date: document.getElementById('tDate').value, vou: document.getElementById('tVou').value, cat: document.getElementById('tCat').value, mem: document.getElementById('tMem').value,
@@ -757,10 +737,7 @@ async function saveTxn() {
         being: document.getElementById('tBeing').value
     };
     if(idx === -1) records.push(data); else records[idx] = data;
-    
-    refresh(); 
-    await CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
-    showAppSection('dashboard');
+    refresh(); showAppSection('dashboard');
 }
 
 function editRec(i) {
@@ -771,22 +748,8 @@ function editRec(i) {
     document.getElementById('tBeing').value = r.being;
 }
 
-function delRec(i) { 
-    sysConfirm("Permanently delete this journal entry?", async () => { 
-        records.splice(i,1); 
-        refresh(); 
-        await CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
-    }); 
-}
-
-function wipeData() { 
-    sysConfirm("DANGER: Wipe entire database for this session?", async () => { 
-        records = []; 
-        refresh(); 
-        await CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
-    }); 
-}
-
+function delRec(i) { sysConfirm("Permanently delete this journal entry?", () => { records.splice(i,1); refresh(); }); }
+function wipeData() { sysConfirm("Wipe entire database for this session?", () => { records = []; refresh(); }); }
 function resetForm() { document.getElementById('editIdx').value = "-1"; document.getElementById('tDate').value = new Date().toISOString().split('T')[0]; document.getElementById('tAmt').value = ""; genAI(); }
 
 function updateDrops() {
@@ -832,9 +795,8 @@ function renderLedger() {
     if(items.length > 0) {
         let catBal = 0;
         items.forEach(r => {
-            catBal = parseFloat((catBal + (parseFloat(r.dr)||0) - (parseFloat(r.cr)||0)).toFixed(2));
-            let balStr = catBal >= 0 ? `₹${catBal}` : `-₹${Math.abs(catBal)}`;
-            h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">${balStr}</td></tr>`;
+            catBal = parseFloat((catBal + r.dr - r.cr).toFixed(2));
+            h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">₹${catBal}</td></tr>`;
         });
     } else {
         h += `<tr><td colspan="6" style="text-align:center; color:var(--text-muted)">No transactions recorded in this head.</td></tr>`;
@@ -847,17 +809,16 @@ function renderAllLedgers() {
     config.cats.forEach(c => {
         const items = records.filter(r => r.cat === c);
         if(items.length > 0) {
-            h += `<div class="card"><h4>${c}</h4><table><thead><tr><th>Date</th><th>Voucher</th><th>Part</th><th>Dr</th><th>Cr</th><th>Balance</th></tr></thead><tbody>`;
+            h += `<div class="card"><h4>${c} Head</h4><table><thead><tr><th>Date</th><th>Voucher</th><th>Part</th><th>Dr</th><th>Cr</th><th>Balance</th></tr></thead><tbody>`;
             let catBal = 0;
             items.forEach(r => {
-                catBal = parseFloat((catBal + (parseFloat(r.dr)||0) - (parseFloat(r.cr)||0)).toFixed(2));
-                let balStr = catBal >= 0 ? `₹${catBal}` : `-₹${Math.abs(catBal)}`;
-                h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">${balStr}</td></tr>`;
+                catBal = parseFloat((catBal + r.dr - r.cr).toFixed(2));
+                h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou || '-'}</td><td>${r.mem}</td><td>₹${r.dr}</td><td>₹${r.cr}</td><td style="font-weight:600; color:${catBal >= 0 ? 'var(--success)' : 'var(--danger)'}">₹${catBal}</td></tr>`;
             });
             h += `</tbody></table></div>`;
         }
     });
-    if (h === '') h = `<div class="card" style="text-align:center; color:var(--text-muted)">No transactions found in any active ledger.</div>`;
+    if (h === '') h = `<div class="card" style="text-align:center; color:var(--text-muted)">No transactions found in active ledgers.</div>`;
     document.getElementById('ledgerOutput').innerHTML = h;
 }
 
@@ -903,16 +864,15 @@ function loadAdmin() {
     renderAdminDocs();
 }
 
-async function saveAdminGeneral() {
+function saveAdminGeneral() {
     config.club = document.getElementById('admClub').value;
     config.passA = document.getElementById('admPassA').value;
     config.sigA = document.getElementById('admSigA').value; 
     config.sigT = document.getElementById('admSigT').value; 
     config.sigS = document.getElementById('admSigS').value;
-    
-    await CLOUD.set('njs_cfg_v16', JSON.stringify(config)); 
+    CLOUD.set('njs_cfg_v16', JSON.stringify(config)); 
     document.getElementById('dispClub').innerText = config.club;
-    sysAlert("General Configuration Synced to Cloud Successfully!"); 
+    sysAlert("Configuration saved successfully!"); 
 }
 
 function backupData() {
@@ -922,51 +882,42 @@ function backupData() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'NJS_Cloud_Backup.json'; a.click();
 }
 
+// Fixed Restore Data Binding Loop
 function restoreData(e) {
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
         const data = JSON.parse(ev.target.result);
-        
         CLOUD.data['njs_cfg_v16'] = JSON.stringify(data.config);
         CLOUD.data['njs_docs_v16'] = JSON.stringify(data.documents);
         for(let s in data.db) CLOUD.data['njs_db_'+s] = JSON.stringify(data.db[s]);
-        
-        CLOUD.sync().then(() => {
-            sysAlert("Cloud Restore complete. Please refresh to load data.");
-        });
+        await CLOUD.sync();
+        sysAlert("Cloud Backup Restored! Please reload the page.", "Success");
     };
     reader.readAsText(e.target.files[0]);
 }
 
-async function addCfg(k, id) { 
+function addCfg(k, id) { 
     const v = document.getElementById(id).value.trim(); 
     if(v && !config[k].includes(v)){ 
         config[k].push(v); document.getElementById(id).value=""; 
         loadAdmin(); updateDrops(); 
-        await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
     }
 }
-
 function remCfg(k, i) { 
-    sysConfirm("Delete this configuration?", async () => {
+    sysConfirm("Delete this configuration?", () => {
         config[k].splice(i,1); 
-        await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
         loadAdmin(); updateDrops(); 
     });
 }
 
-// --- User Management Control Panel ---
 function renderAdminUsers() {
     let h = '';
     config.users.forEach((u, i) => {
-        h += `<tr>
-            <td>${u.name}</td><td><code style="background:#e2e8f0; padding:2px 6px; border-radius:4px;">${u.key}</code></td>
-            <td>${u.validTill}</td>
-            <td>
-                <button onclick="editUser(${i})" class="btn btn-warn" style="padding:4px 8px; font-size:11px;">✎</button>
-                <button onclick="delUser(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">×</button>
-            </td>
-        </tr>`;
+        h += `<tr><td>${u.name}</td><td><code style="background:#e2e8f0; padding:2px 6px; border-radius:4px;">${u.key}</code></td><td>${u.validTill}</td>
+        <td><button onclick="editUser(${i})" class="btn btn-warn" style="padding:4px 8px; font-size:11px;">✎</button>
+        <button onclick="delUser(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;">×</button></td></tr>`;
     });
     document.getElementById('userListBody').innerHTML = h;
 }
@@ -977,7 +928,6 @@ function openUserForm() {
     document.getElementById('uName').value = "";
     document.getElementById('uKey').value = Math.random().toString(36).substring(2,8).toUpperCase();
     document.getElementById('uValid').value = "12/2026";
-    document.getElementById('userFormTitle').innerText = "Add New Member";
 }
 
 function editUser(i) {
@@ -987,63 +937,46 @@ function editUser(i) {
     document.getElementById('uName').value = u.name;
     document.getElementById('uKey').value = u.key;
     document.getElementById('uValid').value = u.validTill;
-    document.getElementById('userFormTitle').innerText = "Edit Member Profile";
 }
 
-async function saveUser() {
+function saveUser() {
     const idx = parseInt(document.getElementById('editUserIdx').value);
-    const uName = document.getElementById('uName').value.trim();
-    if(!uName) return sysAlert("Member name is required.");
+    const name = document.getElementById('uName').value.trim();
+    if(!name) return sysAlert("Name is required.");
     
-    const obj = {
-        name: uName,
-        key: document.getElementById('uKey').value.toUpperCase(),
-        validTill: document.getElementById('uValid').value,
-        role: 'member'
-    };
+    const obj = { name, key: document.getElementById('uKey').value.toUpperCase(), validTill: document.getElementById('uValid').value, role: 'member' };
+    if(idx === -1) config.users.push(obj); else config.users[idx] = obj;
     
-    if(idx === -1) config.users.push(obj);
-    else config.users[idx] = obj;
-    
-    await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+    CLOUD.set('njs_cfg_v16', JSON.stringify(config));
     document.getElementById('userEditForm').classList.add('hidden');
     renderAdminUsers();
     updateDrops();
 }
 
 function delUser(i) {
-    sysConfirm(`Delete member ${config.users[i].name}?`, async () => {
+    sysConfirm(`Delete member ${config.users[i].name}?`, () => {
         config.users.splice(i,1);
-        await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
         renderAdminUsers();
     });
 }
 
-// --- Document Management Control ---
 function uploadDoc() {
     const sess = document.getElementById('upDocSess').value;
     const name = document.getElementById('upDocName').value.trim();
     const fileInp = document.getElementById('upDocFile');
     
-    if(!name || !fileInp.files.length) return sysAlert("Please provide document name and select a PDF file.");
-    
+    if(!name || !fileInp.files.length) return sysAlert("Provide details and select PDF.");
     const file = fileInp.files[0];
-    if(file.size > 1.5 * 1024 * 1024) return sysAlert("File is too large. Please compress your PDF below 1.5MB to save cloud bandwidth.");
 
     const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            documents.push({ id: Date.now(), sess: sess, name: name, dataUrl: e.target.result });
-            
-            await CLOUD.set('njs_docs_v16', JSON.stringify(documents));
-            
-            sysAlert("Document successfully uploaded to Cloud and bound to session " + sess);
-            document.getElementById('upDocName').value = "";
-            fileInp.value = "";
-            renderAdminDocs();
-        } catch(err) {
-            sysAlert("Cloud Storage limit exceeded or network rejected the data size.", "Storage Error");
-        }
+    reader.onload = (e) => {
+        documents.push({ id: Date.now(), sess, name, dataUrl: e.target.result });
+        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+        sysAlert("Document uploaded successfully!");
+        document.getElementById('upDocName').value = "";
+        fileInp.value = "";
+        renderAdminDocs();
     };
     reader.readAsDataURL(file);
 }
@@ -1057,26 +990,25 @@ function renderAdminDocs() {
 }
 
 function delDoc(i) {
-    sysConfirm("Delete this document from Cloud?", async () => {
+    sysConfirm("Delete this document?", () => {
         documents.splice(i,1);
-        await CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
         renderAdminDocs();
     });
 }
 
 function renderDocGallery() {
     const filter = document.getElementById('docViewSess').value;
-    let viewDocs = documents;
-    if(filter !== 'ALL') viewDocs = documents.filter(d => d.sess === filter);
+    let viewDocs = filter === 'ALL' ? documents : documents.filter(d => d.sess === filter);
     
     let h = '';
     if(viewDocs.length === 0) {
-        h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available for the selected criteria.</div>`;
+        h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available.</div>`;
     } else {
         viewDocs.forEach(d => {
             h += `<div class="doc-card">
-                <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
-                <div style="font-weight: 600;">${d.name}</div>
+                <div style="font-size:11px; font-weight:700; color:var(--blue);">${d.sess} Session</div>
+                <div style="font-weight:600;">${d.name}</div>
                 <a href="${d.dataUrl}" download="${d.name.replace(/\s+/g,'_')}.pdf" target="_blank" class="btn btn-ghost" style="text-decoration:none; margin-top: auto;">👁 View / Download</a>
             </div>`;
         });
@@ -1084,12 +1016,11 @@ function renderDocGallery() {
     document.getElementById('docGallery').innerHTML = h;
 }
 
-// --- Excel Batch Import Processor ---
 function importExcel(e) {
     const file = e.target.files[0];
     if(!file) return;
     const reader = new FileReader();
-    reader.onload = async (ev) => {
+    reader.onload = (ev) => {
         try {
             const wb = XLSX.read(new Uint8Array(ev.target.result), {type:'array'});
             const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
@@ -1103,51 +1034,28 @@ function importExcel(e) {
                         if(p.length === 3) finalDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
                     } else if (d.includes('-')) {
                         finalDate = d;
-                    } else if (!isNaN(d)) {
-                        let jsDate = new Date(Math.round((Number(d) - 25569) * 86400 * 1000));
-                        if(!isNaN(jsDate)) finalDate = jsDate.toISOString().split('T')[0];
                     }
                 }
-
                 let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
-                if(parsedCat && !config.cats.includes(parsedCat)) {
-                    config.cats.push(parsedCat);
-                }
-
-                const cleanAmt = (val) => {
-                    if(!val) return 0;
-                    let num = parseFloat(String(val).replace(/[^0-9.-]+/g,""));
-                    return isNaN(num) ? 0 : num;
-                };
+                if(parsedCat && !config.cats.includes(parsedCat)) config.cats.push(parsedCat);
 
                 records.push({
-                    date: finalDate,
-                    vou: String(x.Voucher || x['Voucher#'] || ""),
-                    cat: parsedCat,
-                    mem: x.Particulars || x.Remark || "General",
-                    dr: cleanAmt(x['In (+)'] || x.In || x['Cash In (Dr)'] || 0),
-                    cr: cleanAmt(x['Out (-)'] || x.Out || x['Cash Out (Cr)'] || 0),
-                    being: x.Narration || x.Being || ""
+                    date: finalDate, vou: String(x.Voucher || ""), cat: parsedCat, mem: x.Particulars || "General",
+                    dr: parseFloat(x['In (+)'] || 0), cr: parseFloat(x['Out (-)'] || 0), being: x.Narration || ""
                 });
             });
-            
-            refresh(); 
-            await CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
-            await CLOUD.set('njs_cfg_v16', JSON.stringify(config));
-            
-            sysAlert("Batch Excel Import Synced to Cloud Successfully!");
+            CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+            refresh();
+            sysAlert("Excel sheet imported successfully!");
         } catch(err) {
-            console.error(err);
-            sysAlert("Error importing file. Please verify format.", "Import Failed");
+            sysAlert("Error parsing file format.", "Import Failed");
         }
-        e.target.value = ''; 
     };
     reader.readAsArrayBuffer(file);
 }
 
 function exportTable(id, name) {
-    const table = document.getElementById(id);
-    const ws = XLSX.utils.table_to_sheet(table);
+    const ws = XLSX.utils.table_to_sheet(document.getElementById(id));
     const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
     XLSX.writeFile(wb, `${name}_${curSess}.xlsx`);
 }
