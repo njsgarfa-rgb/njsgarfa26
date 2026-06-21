@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NJS CLUB | Master Cloud Ledger v16</title>
+    <title>NJS CLUB | Master Cloud Ledger v16 (Drive Links)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -12,7 +12,6 @@
     
     <style>
         :root {
-            /* Using deep reds to match the provided logo/banner */
             --primary: #881337; --accent: #be123c; --bg: #f8fafc; --card: #ffffff;
             --text-main: #1e293b; --text-muted: #64748b; --danger: #ef4444;
             --blue: #0284c7; --border: #e2e8f0; --warn: #f59e0b; --success: #10b981;
@@ -32,7 +31,6 @@
 
         .banner-img { width: 100%; max-width: 800px; display: block; margin: 0 auto 20px auto; border-radius: 8px; }
 
-        /* Dashboard Tools Area */
         .control-bar { display: flex; flex-wrap: wrap; gap: 10px; background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px; align-items: center; border: 1px solid var(--border); }
         .tool-group { display: flex; align-items: center; gap: 8px; background: white; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
 
@@ -65,28 +63,24 @@
         input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(136, 19, 55, 0.1); }
         label { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        /* Custom Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px); }
         .modal-box { background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
         .modal-title { font-size: 18px; font-weight: 700; margin-top: 0; color: var(--primary); }
         .modal-msg { font-size: 15px; color: var(--text-main); margin: 15px 0 25px 0; line-height: 1.5; }
         .modal-actions { display: flex; gap: 10px; justify-content: center; }
 
-        /* Admin Sub Tabs */
         .admin-tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
         .admin-tab { padding: 10px 15px; background: #f1f5f9; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; border: 1px solid var(--border); }
         .admin-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Letterhead Builder */
         .letterhead-preview { background: white; padding: 40px; border: 1px solid #cbd5e1; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-height: 600px; position: relative; }
         .lh-header { display: flex; justify-content: space-between; margin-top: 20px; font-weight: 600; font-size: 14px; }
         .lh-content { min-height: 300px; margin-top: 40px; outline: none; border: 1px dashed transparent; padding: 10px; transition: 0.2s; }
         .lh-content:focus { border-color: var(--blue); background: #f8fafc; }
         .lh-footer { text-align: right; margin-top: 60px; font-weight: 600; }
 
-        /* Document Grid */
         .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
-        .doc-card { padding: 15px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; }
+        .doc-card { padding: 15px; border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; background: #f8fafc; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
 
         @media (max-width: 600px) { .control-bar { flex-direction: column; align-items: stretch; } }
         @media print { .bottom-nav, header, .no-print, .control-bar, .admin-tabs { display: none !important; } body { padding: 0; background: white; } .card { border: none; box-shadow: none; padding: 0; margin: 0; } }
@@ -174,6 +168,7 @@
                 <button onclick="document.getElementById('xlIn').click()" class="btn btn-success" style="padding: 6px 10px; border-radius: 4px;">📥 Import Excel</button>
             </div>
             <div style="flex-grow: 1;"></div>
+            <button onclick="syncJournal()" class="btn btn-primary admin-only" style="padding: 6px 12px; border-radius: 4px; margin-right: 5px;">💾 Save Journal to Cloud</button>
             <button onclick="wipeData()" class="btn btn-danger admin-only" style="padding: 6px 10px; border-radius: 4px;">🗑 Wipe Session Data</button>
         </div>
 
@@ -249,7 +244,7 @@
     <div id="docSection" class="app-section hidden">
         <div class="card">
             <h3 style="margin-top:0; color: var(--primary);">Session Documents & Circulars</h3>
-            <p style="font-size: 13px; color: var(--text-muted);">View all uploaded PDFs grouped by financial session.</p>
+            <p style="font-size: 13px; color: var(--text-muted);">View and download formal updates or PDFs linked through Google Drive across all financial sessions.</p>
             <div style="margin-bottom: 20px;">
                 <label>Filter by Session</label>
                 <select id="docViewSess" onchange="renderDocGallery()" style="max-width: 300px;"></select>
@@ -264,7 +259,7 @@
             <div class="admin-tabs">
                 <div class="admin-tab active" onclick="switchAdminTab('admGeneral', this)">General Settings</div>
                 <div class="admin-tab" onclick="switchAdminTab('admUsers', this)">Password & Members</div>
-                <div class="admin-tab" onclick="switchAdminTab('admUploads', this)">PDF Uploads</div>
+                <div class="admin-tab" onclick="switchAdminTab('admUploads', this)">Drive Links</div>
                 <div class="admin-tab" onclick="switchAdminTab('admLetter', this)">Letterhead Builder</div>
             </div>
         </div>
@@ -337,19 +332,21 @@
                     <button onclick="document.getElementById('userEditForm').classList.add('hidden')" class="btn btn-ghost">Cancel</button>
                 </div>
             </div>
+
+            <button onclick="saveAdminMembers()" class="btn btn-primary" style="width:100%; margin-top:35px; padding:15px;">COMMIT MEMBER CHANGES TO CLOUD</button>
         </div>
 
         <div id="admUploads" class="admin-panel card hidden">
-            <h4 style="margin-top: 0;">Upload Session Documents (PDF)</h4>
+            <h4 style="margin-top: 0;">Add Session Documents (G-Drive)</h4>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom: 15px;">
                 <div><label>Assign to Session</label><select id="upDocSess"></select></div>
                 <div><label>Event / Document Name</label><input id="upDocName" placeholder="e.g. Durga Puja Audit Report"></div>
             </div>
-            <label>Select PDF File</label>
-            <input type="file" id="upDocFile" accept="application/pdf" style="padding: 10px; background: white;">
-            <button onclick="uploadDoc()" class="btn btn-success" style="margin-top: 15px; width: 100%; padding: 12px;">UPLOAD & BIND DOCUMENT</button>
+            <label>Google Drive Link</label>
+            <input type="url" id="upDocLink" placeholder="https://drive.google.com/..." style="padding: 10px; background: white; width: 100%;">
+            <button onclick="saveDocLink()" class="btn btn-success" style="margin-top: 15px; width: 100%; padding: 12px;">SAVE & BIND LINK</button>
 
-            <h4 style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">Manage Uploaded Documents</h4>
+            <h4 style="margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;">Manage Linked Documents</h4>
             <div class="table-container">
                 <table>
                     <thead><tr><th>Session</th><th>Document Name</th><th>Action</th></tr></thead>
@@ -430,97 +427,60 @@ function resolveConfirm(res) {
 
 // --- Cloud Storage Adapter (JSONBin.io) ---
 const CLOUD = {
-
     API_KEY: "$2a$10$a4BE0qQW8tmOuW2fcpSiJOa5X8uoYCLSQlT8OfI7nmk2uN50brtf2",
     ACCESS_KEY: "$2a$10$VuawWxz/5R6HB2RYDs6DQOOIJMdxiEZhsG2iM8d4s9Jt9GFBNTUKK",
     BIN_ID: "6a2ee233da38895dfebf8333",
-
     data: {},
 
     async init() {
-
         const loader = document.createElement('div');
-
-        loader.innerHTML =
-        '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Cloud...</div>';
-
+        loader.innerHTML = '<div style="position:fixed;inset:0;background:white;display:flex;justify-content:center;align-items:center;z-index:99999;">Connecting Cloud...</div>';
         document.body.appendChild(loader);
 
         try {
-
-            const res = await fetch(
-                `https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`,
-                {
-                    headers: {
-                        "X-Master-Key": this.API_KEY,
-                        "X-Access-Key": this.ACCESS_KEY
-                    }
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}/latest`, {
+                headers: {
+                    "X-Master-Key": this.API_KEY,
+                    "X-Access-Key": this.ACCESS_KEY
                 }
-            );
-
+            });
             const json = await res.json();
-
             this.data = json.record || {};
-
         } catch(e) {
-
             sysAlert("Cloud connection failed");
-
         }
-
         document.body.removeChild(loader);
-
     },
 
     get(key) {
-
         return this.data[key] || null;
-
     },
 
     set(key,val) {
-
         this.data[key] = val;
-
         this.sync();
-
     },
 
     async sync() {
-
         try {
-
-            await fetch(
-
-                `https://api.jsonbin.io/v3/b/${this.BIN_ID}`,
-
-                {
-                    method:"PUT",
-
-                    headers:{
-                        "Content-Type":"application/json",
-                        "X-Master-Key":this.API_KEY,
-                        "X-Access-Key":this.ACCESS_KEY
-                    },
-
-                    body:JSON.stringify(this.data)
-                }
-
-            );
-
+            await fetch(`https://api.jsonbin.io/v3/b/${this.BIN_ID}`, {
+                method:"PUT",
+                headers:{
+                    "Content-Type":"application/json",
+                    "X-Master-Key":this.API_KEY,
+                    "X-Access-Key":this.ACCESS_KEY
+                },
+                body:JSON.stringify(this.data)
+            });
         } catch(e) {
-
             console.error(e);
-
         }
-
     }
-
 };
+
 // --- Data Models & State ---
-// Migrated from global scope to be initialized after Cloud connects
 let curSess, config, records, documents, currentUserObj;
-// Pure Code Equivalent of the Club Banner
+
 const staticBannerHTML = `
 <div style="display: flex; align-items: stretch; max-width: 800px; margin: 0 auto 20px auto; color: #a31621; font-family: Arial, sans-serif; background: white; overflow: hidden; padding: 10px;">
     <div style="width: 80px; display: flex; align-items: center; justify-content: center;">
@@ -566,20 +526,15 @@ function fmtDate(dStr) {
 
 // --- Initialization & Auth Flow ---
 window.onload = async () => {
-    // 1. Connect to Cloud First
     await CLOUD.init();
-currentUserObj =
-JSON.parse(
-    CLOUD.get("njs_login_state") || "null"
-);
-    // 2. Load Core Data from Cloud
+    currentUserObj = JSON.parse(CLOUD.get("njs_login_state") || "null");
+    
     curSess = CLOUD.get('njs_active_sess') || '2024-25';
     let rawCfg = CLOUD.get('njs_cfg_v16');
     
     if (rawCfg) {
         config = JSON.parse(rawCfg);
     } else {
-        // Push default configuration to cloud if brand new
         config = {
             club: 'Garfa Nobojyoti Sangha',
             cats: ['Cash In Hand', 'Subscription', 'Electric Bill', 'Miscellaneous'],
@@ -621,7 +576,6 @@ JSON.parse(
     documents = JSON.parse(CLOUD.get('njs_docs_v16') || "[]");
     currentUserObj = null;
 
-    // 3. Render UI Elements
     document.getElementById('homeBannerTarget').innerHTML = staticBannerHTML;
     document.getElementById('lhBannerTarget').innerHTML = staticBannerHTML;
 
@@ -635,6 +589,25 @@ JSON.parse(
 function showAdminLogin() {
     document.getElementById('memberLoginCard').classList.add('hidden');
     document.getElementById('adminLoginCard').classList.remove('hidden');
+}
+
+// --- Verification & Master Save Triggers ---
+function syncJournal() {
+    if(currentUserObj && currentUserObj.role === 'admin') {
+        CLOUD.set('njs_db_' + curSess, JSON.stringify(records));
+        sysAlert("Current ledger journals successfully saved and pushed to the cloud bin!", "Sync Complete");
+    } else {
+        sysAlert("Operation blocked: Admin verification required.");
+    }
+}
+
+function saveAdminMembers() {
+    if(currentUserObj && currentUserObj.role === 'admin') {
+        CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+        sysAlert("All configuration profiles, keys, and access schedules successfully committed to cloud!", "Changes Synced");
+    } else {
+        sysAlert("Operation blocked: Admin verification required.");
+    }
 }
 
 function showMemberLogin() {
@@ -694,17 +667,10 @@ function finalizeLogin() {
     showAppSection('dashboard');
 }
 
-// --- Navigation & Core Views ---
 function showAppSection(id) {
-
-    document.querySelectorAll('.app-section')
-        .forEach(d => d.classList.add('hidden'));
-
-    document.getElementById(id)
-        .classList.remove('hidden');
-
-    document.querySelectorAll('.nav-item')
-        .forEach(d => d.classList.remove('active'));
+    document.querySelectorAll('.app-section').forEach(d => d.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(d => d.classList.remove('active'));
 
     const navMap = {
         dashboard:'navJournal',
@@ -715,9 +681,7 @@ function showAppSection(id) {
         adminSection:'navAdmin'
     };
 
-    if(navMap[id])
-        document.getElementById(navMap[id]).classList.add('active');
-
+    if(navMap[id]) document.getElementById(navMap[id]).classList.add('active');
 }
 
 function switchSession(v) { 
@@ -740,6 +704,7 @@ function promptNewSession() {
         if(!config.sessions.includes(clean)) {
             config.sessions.push(clean);
             CLOUD.set('njs_cfg_v16', JSON.stringify(config));
+            sysAlert(`New financial cycle session context "${clean}" generated and dynamically saved to cloud configuration assets!`, "Session Pushed");
         }
         switchSession(clean);
     }
@@ -773,10 +738,10 @@ function refresh() {
         h += `<tr><td>${fmtDate(r.date)}</td><td>${r.vou||'-'}</td><td>${r.mem}</td><td>${r.cat}</td>
         <td style="color:var(--success); font-weight:600">₹${r.dr}</td><td style="color:var(--danger); font-weight:600">₹${r.cr}</td>
         <td style="color:${balColor}; font-weight:700">${balStr}</td>
-        <td class="no-print" style="white-space:nowrap;">
+        <td class="no-print" style="white-space:nowrap; ${!isAdmin ? 'display:none;' : ''}">
             <button onclick="printV(${i})" class="btn btn-ghost" style="padding:4px 8px; font-size:11px;" title="Print">⎙</button>
-            <button onclick="editRec(${i})" class="btn btn-warn ${isAdmin?'':'hidden'}" style="padding:4px 8px; font-size:11px;" title="Edit">✎</button>
-            <button onclick="delRec(${i})" class="btn btn-danger ${isAdmin?'':'hidden'}" style="padding:4px 8px; font-size:11px;" title="Delete">×</button>
+            <button onclick="editRec(${i})" class="btn btn-warn" style="padding:4px 8px; font-size:11px;" title="Edit">✎</button>
+            <button onclick="delRec(${i})" class="btn btn-danger" style="padding:4px 8px; font-size:11px;" title="Delete">×</button>
         </td></tr>`;
     });
     
@@ -876,6 +841,7 @@ function renderLedger() {
     document.getElementById('ledgerOutput').innerHTML = h + `</tbody></table></div>`;
 }
 
+// --- Report & Financial Balances ---
 function renderAllLedgers() {
     let h = '';
     config.cats.forEach(c => {
@@ -948,6 +914,7 @@ function saveAdminGeneral() {
     sysAlert("General Configuration Synced to Cloud Successfully!"); 
 }
 
+// --- Data Protection: Import/Export ---
 function backupData() {
     const data = { config, documents, db: {} };
     config.sessions.forEach(s => data.db[s] = JSON.parse(CLOUD.get('njs_db_'+s) || '[]'));
@@ -1050,30 +1017,24 @@ function delUser(i) {
     });
 }
 
-function uploadDoc() {
+// --- Dynamic Document Link Infrastructure ---
+function saveDocLink() {
     const sess = document.getElementById('upDocSess').value;
     const name = document.getElementById('upDocName').value.trim();
-    const fileInp = document.getElementById('upDocFile');
+    const link = document.getElementById('upDocLink').value.trim();
     
-    if(!name || !fileInp.files.length) return sysAlert("Please provide document name and select a PDF file.");
-    
-    const file = fileInp.files[0];
-    if(file.size > 2 * 1024 * 1024) return sysAlert("File is too large. Cloud limit is 2MB per file.");
+    if(!name || !link) return sysAlert("Please provide both the document name and a Google Drive link.");
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            documents.push({ id: Date.now(), sess: sess, name: name, dataUrl: e.target.result });
-            CLOUD.set('njs_docs_v16', JSON.stringify(documents));
-            sysAlert("Document successfully uploaded to Cloud and bound to session " + sess);
-            document.getElementById('upDocName').value = "";
-            fileInp.value = "";
-            renderAdminDocs();
-        } catch(err) {
-            sysAlert("Storage Limit Reached. Cannot save large file.", "Error");
-        }
-    };
-    reader.readAsDataURL(file);
+    try {
+        documents.push({ id: Date.now(), sess: sess, name: name, link: link });
+        CLOUD.set('njs_docs_v16', JSON.stringify(documents));
+        sysAlert("Google Drive document resource link bound to financial session " + sess, "Link Bound Successfully");
+        document.getElementById('upDocName').value = "";
+        document.getElementById('upDocLink').value = "";
+        renderAdminDocs();
+    } catch(err) {
+        sysAlert("Error saving link.", "Error");
+    }
 }
 
 function renderAdminDocs() {
@@ -1085,7 +1046,7 @@ function renderAdminDocs() {
 }
 
 function delDoc(i) {
-    sysConfirm("Delete this document from Cloud?", () => {
+    sysConfirm("Delete this document link from Cloud?", () => {
         documents.splice(i,1);
         CLOUD.set('njs_docs_v16', JSON.stringify(documents));
         renderAdminDocs();
@@ -1101,17 +1062,26 @@ function renderDocGallery() {
     if(viewDocs.length === 0) {
         h = `<div style="grid-column: 1/-1; text-align:center; padding: 30px; color: var(--text-muted);">No documents available for the selected criteria.</div>`;
     } else {
-        viewDocs.forEach(d => {
+        viewDocs.forEach((d) => {
             h += `<div class="doc-card">
                 <div style="font-size: 11px; font-weight: 700; color: var(--blue);">${d.sess} Session</div>
-                <div style="font-weight: 600;">${d.name}</div>
-                <a href="${d.dataUrl}" download="${d.name.replace(/\s+/g,'_')}.pdf" target="_blank" class="btn btn-ghost" style="text-decoration:none; margin-top: auto;">👁 View / Download</a>
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">📄 ${d.name}</div>
+                <button onclick="openDocument(${d.id})" class="btn btn-blue" style="margin-top: auto; justify-content: center; width:100%; font-size:12px;">👁 View PDF (G-Drive)</button>
             </div>`;
         });
     }
     document.getElementById('docGallery').innerHTML = h;
 }
 
+function openDocument(docId) {
+    const doc = documents.find(d => d.id === docId);
+    if (!doc) return sysAlert("Document record not found.");
+    if (doc.link) {
+        window.open(doc.link, "_blank");
+    }
+}
+
+// --- Excel Integrations ---
 function importExcel(e) {
     const file = e.target.files[0];
     if(!file) return;
@@ -1139,7 +1109,7 @@ function importExcel(e) {
                 let parsedCat = String(x.Category || x.Head || "Miscellaneous").trim();
                 if(parsedCat && !config.cats.includes(parsedCat)) {
                     config.cats.push(parsedCat);
-                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config); // Save silently to avoid multiple calls
+                    CLOUD.data['njs_cfg_v16'] = JSON.stringify(config);
                 }
 
                 const cleanAmt = (val) => {
