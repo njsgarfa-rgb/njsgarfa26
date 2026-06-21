@@ -469,6 +469,7 @@ const CLOUD = {
                     sessions: ['2023-24', '2024-25', '2025-26', '2026-27'],
                     passA: 'admin123',
                     sigA: 'Approved By', sigT: 'Treasurer', sigS: 'Secretary',
+                    documents: [],
                     users: [
                         { name: 'Ranjit Dutta', key: 'A1B2C3', validTill: '12/2025', role: 'member' },
                         { name: 'Sibi Rai', key: 'D4E5F6', validTill: '12/2026', role: 'member' },
@@ -503,7 +504,10 @@ const CLOUD = {
 
             // 3. Populate app system variables global cache context
             config = this.config;
-            documents = JSON.parse(localStorage.getItem('njs_docs_v16') || "[]");
+            if (!config.documents) {
+                config.documents = [];
+            }
+            documents = config.documents;
 
             // 4. Run ledger payload for initial active context session window
             await this.loadSessionData();
@@ -546,6 +550,7 @@ const CLOUD = {
 
     async syncConfig() {
         try {
+            this.config.documents = documents;
             await fetch(`https://api.jsonbin.io/v3/b/${this.CONFIG_BIN}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json", "X-Master-Key": this.API_KEY, "X-Access-Key": this.ACCESS_KEY },
@@ -860,6 +865,7 @@ function importExcel(e) {
     reader.readAsArrayBuffer(file);
 }
 
+// Rest of your JS code continues
 function exportTable(id, name) {
     const table = document.getElementById(id);
     const ws = XLSX.utils.table_to_sheet(table);
@@ -1025,19 +1031,19 @@ function saveAdminGeneral() {
 
 // --- Data Protection: Import/Export ---
 function backupData() {
-    const data = { config, documents, db: {} };
-    localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
+    config.documents = documents;
+    CLOUD.syncConfig();
     sysAlert("Data backup completed locally inside application structures.", "Backup saved");
 }
 
+// Update runtime references
 function restoreData(e) {
     const reader = new FileReader();
     reader.onload = async (ev) => {
         const data = JSON.parse(ev.target.result);
         CLOUD.config = data.config;
         config = data.config;
-        documents = data.documents || [];
-        localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
+        documents = data.config.documents || [];
         await CLOUD.syncConfig();
         sysAlert("Cloud Restore complete. Please refresh to load data.");
     };
@@ -1134,8 +1140,10 @@ function saveDocLink() {
 
     try {
         documents.push({ id: Date.now(), sess: sess, name: name, link: link });
-        localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
-        sysAlert("Google Drive document resource link bound to financial session " + sess, "Link Bound Successfully");
+        config.documents = documents;
+        CLOUD.syncConfig();
+        
+        sysAlert("Google Drive document resource link bound to financial session " + sess + " and successfully updated on the cloud ecosystem!", "Link Saved and Cloud Synced");
         document.getElementById('upDocName').value = "";
         document.getElementById('upDocLink').value = "";
         renderAdminDocs();
@@ -1155,7 +1163,8 @@ function renderAdminDocs() {
 function delDoc(i) {
     sysConfirm("Delete this document link?", () => {
         documents.splice(i,1);
-        localStorage.setItem('njs_docs_v16', JSON.stringify(documents));
+        config.documents = documents;
+        CLOUD.syncConfig();
         renderAdminDocs();
     });
 }
